@@ -18,7 +18,7 @@
  */
 #include <stdint.h>
 #include <libopencm3/stm32/usart.h>
-#include <libopencm3/stm32/timer.h>
+#include <libopencm3/stm32/spi.h>
 #include <libopencm3/stm32/rtc.h>
 #include <libopencm3/stm32/can.h>
 #include <libopencm3/stm32/iwdg.h>
@@ -36,6 +36,7 @@
 #include "printf.h"
 #include "stm32scheduler.h"
 #include "terminalcommands.h"
+#include "flyingadcbms.h"
 
 #define PRINT_JSON 0
 
@@ -43,48 +44,110 @@ static Stm32Scheduler* scheduler;
 static CanHardware* can;
 static CanMap* canMap;
 
+
+static void ReadAdc()
+{
+   int totalBalanceCycles = 10;
+   static uint8_t chan = 0, balanceCycles = 0;
+   static float sum = 0, min, max, avg;
+   bool balance = Param::GetBool(Param::balance);
+
+   if (balance)
+   {
+      if (balanceCycles == 0)
+      {
+         balanceCycles = totalBalanceCycles;
+      }
+      else
+      {
+         balanceCycles--;
+      }
+
+      if (balanceCycles > 0 && balanceCycles < (totalBalanceCycles - 1))
+      {
+         float udc = Param::GetFloat((Param::PARAM_NUM)(Param::u0 + chan));
+
+         //Keep clocking the mux so it doesn't turn off
+         //spi_xfer(SPI1, 0x00C0 | chan);
+
+         if (udc < (avg - 1))
+         {
+            FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_CHARGE);
+         }
+         else if (udc > (avg + 1))
+         {
+            FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_DISCHARGE);
+         }
+         else
+         {
+            //Param::SetInt((Param::PARAM_NUM)(Param::u0cmd + chan), 0);
+            FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_OFF);
+         }
+      }
+      else
+      {
+         FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_OFF);
+      }
+   }
+   else
+   {
+      balanceCycles = totalBalanceCycles;
+      FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_OFF);
+   }
+
+   if (balanceCycles == totalBalanceCycles)
+   {
+      //Read ADC result before mux change
+      float udc = FlyingAdcBms::GetRawResult();
+
+      udc *= Param::GetFloat(Param::gain) / 1000.0f;
+
+      Param::SetFloat((Param::PARAM_NUM)(Param::u0 + chan), udc);
+
+      min = MIN(min, udc);
+      max = MAX(max, udc);
+      sum += udc;
+
+      if ((chan + 1) >= Param::GetInt(Param::numchan))
+      {
+         chan = 0;
+         avg = sum / Param::GetInt(Param::numchan);
+         Param::SetFloat(Param::uavg, avg);
+         Param::SetFloat(Param::umin, min);
+         Param::SetFloat(Param::umax, max);
+         Param::SetFloat(Param::udelta, max - min);
+
+         min = 8000;
+         max = 0;
+         sum = 0;
+      }
+      else
+      {
+         chan++;
+      }
+
+      FlyingAdcBms::SelectChannel(chan);
+
+      FlyingAdcBms::StartAdc();
+   }
+}
+
 //sample 100ms task
 static void Ms100Task(void)
 {
-   //The following call toggles the LED output, so every 100ms
-   //The LED changes from on to off and back.
-   //Other calls:
-   //DigIo::led_out.Set(); //turns LED on
-   //DigIo::led_out.Clear(); //turns LED off
-   //For every entry in digio_prj.h there is a member in DigIo
-   DigIo::led_out.Toggle();
    //The boot loader enables the watchdog, we have to reset it
    //at least every 2s or otherwise the controller is hard reset.
    iwdg_reset();
-   //Calculate CPU load. Don't be surprised if it is zero.
    float cpuLoad = scheduler->GetCpuLoad();
-   //This sets a fixed point value WITHOUT calling the parm_Change() function
    Param::SetFloat(Param::cpuload, cpuLoad / 10);
 
-   //If we chose to send CAN messages every 100 ms, do this here.
-   if (Param::GetInt(Param::canperiod) == CAN_PERIOD_100MS)
-      canMap->SendAll();
+   canMap->SendAll();
 }
 
 //sample 10 ms task
-static void Ms10Task(void)
+static void Ms25Task(void)
 {
-   //Set timestamp of error message
-   ErrorMessage::SetTime(rtc_get_counter_val());
-
-   if (DigIo::test_in.Get())
-   {
-      //Post a test error message when our test input is high
-      ErrorMessage::Post(ERR_TESTERROR);
-   }
-
-   //AnaIn::<name>.Get() returns the filtered ADC value
-   //Param::SetInt() sets an integer value.
-   Param::SetInt(Param::testain, AnaIn::test.Get());
-
-   //If we chose to send CAN messages every 10 ms, do this here.
-   if (Param::GetInt(Param::canperiod) == CAN_PERIOD_10MS)
-      canMap->SendAll();
+   ReadAdc();
 }
 
 /** This function is called when the user changes a parameter */
@@ -107,8 +170,6 @@ extern "C" void tim2_isr(void)
 
 extern "C" int main(void)
 {
-   extern const TERM_CMD termCmds[];
-
    clock_setup(); //Must always come first
    //rtc_setup();
    ANA_IN_CONFIGURE(ANA_IN_LIST);
@@ -116,21 +177,22 @@ extern "C" int main(void)
    AnaIn::Start(); //Starts background ADC conversion via DMA
    write_bootloader_pininit(); //Instructs boot loader to initialize certain pins
 
-   tim_setup(); //Sample init of a timer
    nvic_setup(); //Set up some interrupts
+   spi_setup();
    parm_load(); //Load stored parameters
 
    Stm32Scheduler s(TIM2); //We never exit main so it's ok to put it on stack
    scheduler = &s;
    //Initialize CAN1, including interrupts. Clock must be enabled in clock_setup()
-   Stm32Can c(CAN1, (CanHardware::baudrates)Param::GetInt(Param::canspeed));
+   Stm32Can c(CAN1, CanHardware::Baud500);
    CanMap cm(&c);
    //store a pointer for easier access
    can = &c;
    canMap = &cm;
 
+   cm.SetNodeId(3);
+
    //This is all we need to do to set up a terminal on USART3
-   Terminal t(USART3, termCmds);
    TerminalCommands::SetCanMap(canMap);
 
    //Up to four tasks can be added to each timer scheduler
@@ -138,7 +200,7 @@ extern "C" int main(void)
    //The longest interval is 655ms due to hardware restrictions
    //You have to enable the interrupt (int this case for TIM2) in nvic_setup()
    //There you can also configure the priority of the scheduler over other interrupts
-   s.AddTask(Ms10Task, 10);
+   s.AddTask(Ms25Task, 25);
    s.AddTask(Ms100Task, 100);
 
    //backward compatibility, version 4 was the first to support the "stream" command
@@ -152,7 +214,7 @@ extern "C" int main(void)
    while(1)
    {
       char c = 0;
-      t.Run();
+
       if (canMap->GetPrintRequest() == PRINT_JSON)
       {
          TerminalCommands::PrintParamsJson(canMap, &c);

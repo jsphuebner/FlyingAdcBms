@@ -1,7 +1,7 @@
 /*
- * This file is part of the stm32-template project.
+ * This file is part of the FlyingAdcBms project.
  *
- * Copyright (C) 2020 Johannes Huebner <dev@johanneshuebner.com>
+ * Copyright (C) 2023 Johannes Huebner <openinverter.org>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,24 +16,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#ifndef FLYINGADCBMS_H
+#define FLYINGADCBMS_H
 
-#ifndef HWINIT_H_INCLUDED
-#define HWINIT_H_INCLUDED
 
-
-#ifdef __cplusplus
-extern "C"
+class FlyingAdcBms
 {
-#endif
+   public:
+      enum BalanceCommand { BAL_OFF, BAL_DISCHARGE, BAL_CHARGE };
 
-void clock_setup(void);
-void spi_setup(void);
-void nvic_setup(void);
-void rtc_setup(void);
-void write_bootloader_pininit();
+      static void SelectChannel(uint8_t channel);
+      static void StartAdc();
+      static int32_t GetRawResult();
+      static void SetBalancing(BalanceCommand cmd);
 
-#ifdef __cplusplus
-}
-#endif
+   protected:
 
-#endif // HWINIT_H_INCLUDED
+   private:
+      static uint8_t selectedChannel, previousChannel;
+};
+
+#endif // FLYINGADCBMS_H

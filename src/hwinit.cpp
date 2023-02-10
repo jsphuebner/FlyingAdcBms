@@ -24,7 +24,7 @@
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/adc.h>
 #include <libopencm3/stm32/timer.h>
-#include <libopencm3/stm32/dma.h>
+#include <libopencm3/stm32/spi.h>
 #include <libopencm3/stm32/rtc.h>
 #include <libopencm3/stm32/crc.h>
 #include <libopencm3/stm32/flash.h>
@@ -57,6 +57,18 @@ void clock_setup(void)
    rcc_periph_clock_enable(RCC_CRC);
    rcc_periph_clock_enable(RCC_AFIO); //CAN
    rcc_periph_clock_enable(RCC_CAN1); //CAN
+   rcc_periph_clock_enable(RCC_SPI1);
+}
+
+void spi_setup()
+{
+   spi_init_master(SPI1, SPI_CR1_BAUDRATE_FPCLK_DIV_256, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
+                  SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_16BIT, SPI_CR1_MSBFIRST);
+
+   spi_enable_software_slave_management(SPI1);
+   spi_set_nss_high(SPI1);
+   gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO5 | GPIO7);
+   spi_enable(SPI1);
 }
 
 /* Some pins should never be left floating at any time
@@ -120,44 +132,5 @@ void rtc_setup()
    //62.5kHz / (624 + 1) = 100Hz
    rtc_auto_awake(RCC_HSE, 624); //10ms tick
    rtc_set_counter_val(0);
-}
-
-/**
-* Setup main PWM timer and timer for generating over current
-* reference values and external PWM
-*/
-void tim_setup()
-{
-   /*** Setup over/undercurrent and PWM output timer */
-   timer_disable_counter(OVER_CUR_TIMER);
-   //edge aligned PWM
-   timer_set_alignment(OVER_CUR_TIMER, TIM_CR1_CMS_EDGE);
-   timer_enable_preload(OVER_CUR_TIMER);
-   /* PWM mode 1 and preload enable */
-   timer_set_oc_mode(OVER_CUR_TIMER, TIM_OC1, TIM_OCM_PWM1);
-   timer_set_oc_mode(OVER_CUR_TIMER, TIM_OC2, TIM_OCM_PWM1);
-   timer_set_oc_mode(OVER_CUR_TIMER, TIM_OC3, TIM_OCM_PWM1);
-   timer_set_oc_mode(OVER_CUR_TIMER, TIM_OC4, TIM_OCM_PWM1);
-   timer_enable_oc_preload(OVER_CUR_TIMER, TIM_OC1);
-   timer_enable_oc_preload(OVER_CUR_TIMER, TIM_OC2);
-   timer_enable_oc_preload(OVER_CUR_TIMER, TIM_OC3);
-   timer_enable_oc_preload(OVER_CUR_TIMER, TIM_OC4);
-
-   timer_set_oc_polarity_high(OVER_CUR_TIMER, TIM_OC1);
-   timer_set_oc_polarity_high(OVER_CUR_TIMER, TIM_OC2);
-   timer_set_oc_polarity_high(OVER_CUR_TIMER, TIM_OC3);
-   timer_set_oc_polarity_high(OVER_CUR_TIMER, TIM_OC4);
-   timer_enable_oc_output(OVER_CUR_TIMER, TIM_OC1);
-   timer_enable_oc_output(OVER_CUR_TIMER, TIM_OC2);
-   timer_enable_oc_output(OVER_CUR_TIMER, TIM_OC3);
-   timer_enable_oc_output(OVER_CUR_TIMER, TIM_OC4);
-   timer_generate_event(OVER_CUR_TIMER, TIM_EGR_UG);
-   timer_set_prescaler(OVER_CUR_TIMER, 0);
-   /* PWM frequency */
-   timer_set_period(OVER_CUR_TIMER, OCURMAX);
-   timer_enable_counter(OVER_CUR_TIMER);
-
-   /** setup gpio */
-   gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO7 | GPIO8 | GPIO9);
 }
 

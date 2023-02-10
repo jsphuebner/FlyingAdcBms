@@ -2,7 +2,7 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
-		<Option title="name_your_project" />
+		<Option title="FlyingAdcBms" />
 		<Option makefile_is_custom="1" />
 		<Option pch_mode="2" />
 		<Option compiler="armelfgcc" />
@@ -16,10 +16,13 @@
 		</MakeCommands>
 		<Build>
 			<Target title="Release">
-				<Option output="stm32_yourname" prefix_auto="0" extension_auto="0" />
+				<Option output="stm32_bms" prefix_auto="0" extension_auto="0" />
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="armelfgcc" />
+				<Compiler>
+					<Add directory="include" />
+				</Compiler>
 				<MakeCommands>
 					<Build command="CONTROL=SINE make" />
 					<CompileFile command="$make -f  $file " />
@@ -34,6 +37,7 @@
 		<Unit filename="include/anain_prj.h" />
 		<Unit filename="include/digio_prj.h" />
 		<Unit filename="include/errormessage_prj.h" />
+		<Unit filename="include/flyingadcbms.h" />
 		<Unit filename="include/hwdefs.h" />
 		<Unit filename="include/hwinit.h" />
 		<Unit filename="include/param_prj.h" />
@@ -85,6 +89,7 @@
 		<Unit filename="libopeninv/src/terminal.cpp" />
 		<Unit filename="libopeninv/src/terminalcommands.cpp" />
 		<Unit filename="linker.ld" />
+		<Unit filename="src/flyingadcbms.cpp" />
 		<Unit filename="src/hwinit.cpp" />
 		<Unit filename="src/main.cpp" />
 		<Unit filename="src/terminal_prj.cpp" />
