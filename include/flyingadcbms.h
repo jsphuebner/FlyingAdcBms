@@ -24,11 +24,13 @@ class FlyingAdcBms
 {
    public:
       enum BalanceCommand { BAL_OFF, BAL_DISCHARGE, BAL_CHARGE };
+      enum BalanceStatus  { STT_OFF, STT_DISCHARGE, STT_CHARGEPOS, STT_CHARGENEG };
 
+      static void MuxOff();
       static void SelectChannel(uint8_t channel);
       static void StartAdc();
       static int32_t GetRawResult();
-      static void SetBalancing(BalanceCommand cmd);
+      static BalanceStatus SetBalancing(BalanceCommand cmd);
 
    protected:
 

@@ -41,9 +41,7 @@
 #define PRINT_JSON 0
 
 static Stm32Scheduler* scheduler;
-static CanHardware* can;
 static CanMap* canMap;
-
 
 static void ReadAdc()
 {
@@ -51,6 +49,7 @@ static void ReadAdc()
    static uint8_t chan = 0, balanceCycles = 0;
    static float sum = 0, min, max, avg;
    bool balance = Param::GetBool(Param::balance);
+   FlyingAdcBms::BalanceStatus bstt = FlyingAdcBms::STT_OFF;
 
    if (balance)
    {
@@ -72,15 +71,14 @@ static void ReadAdc()
 
          if (udc < (avg - 1))
          {
-            FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_CHARGE);
+            bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_CHARGE);
          }
          else if (udc > (avg + 1))
          {
-            FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_DISCHARGE);
+            bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_DISCHARGE);
          }
          else
          {
-            //Param::SetInt((Param::PARAM_NUM)(Param::u0cmd + chan), 0);
             FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_OFF);
          }
       }
@@ -94,6 +92,8 @@ static void ReadAdc()
       balanceCycles = totalBalanceCycles;
       FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_OFF);
    }
+
+   Param::SetInt((Param::PARAM_NUM)(Param::u0cmd + chan), bstt);
 
    if (balanceCycles == totalBalanceCycles)
    {
@@ -147,7 +147,10 @@ static void Ms100Task(void)
 //sample 10 ms task
 static void Ms25Task(void)
 {
-   ReadAdc();
+   if (Param::GetBool(Param::enable))
+      ReadAdc();
+   else
+      FlyingAdcBms::MuxOff();
 }
 
 /** This function is called when the user changes a parameter */
@@ -186,8 +189,6 @@ extern "C" int main(void)
    //Initialize CAN1, including interrupts. Clock must be enabled in clock_setup()
    Stm32Can c(CAN1, CanHardware::Baud500);
    CanMap cm(&c);
-   //store a pointer for easier access
-   can = &c;
    canMap = &cm;
 
    cm.SetNodeId(3);

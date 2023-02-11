@@ -27,6 +27,12 @@ static void SendRecvI2COverSPI(uint8_t address, bool read, uint8_t* data, uint8_
 uint8_t FlyingAdcBms::selectedChannel = 0;
 uint8_t FlyingAdcBms::previousChannel = 0;
 
+void FlyingAdcBms::MuxOff()
+{
+   //Turn off mux
+   spi_xfer(SPI1, 0x0080);
+}
+
 void FlyingAdcBms::SelectChannel(uint8_t channel)
 {
    selectedChannel = channel;
@@ -52,8 +58,9 @@ int32_t FlyingAdcBms::GetRawResult()
    return result;
 }
 
-void FlyingAdcBms::SetBalancing(BalanceCommand cmd)
+FlyingAdcBms::BalanceStatus FlyingAdcBms::SetBalancing(BalanceCommand cmd)
 {
+   BalanceStatus stt = STT_OFF;
    uint8_t data[2] = { 0x03, 0x00 }; //direction register: all outputs
 
    SendRecvI2COverSPI(0x41, false, data, 2);
@@ -67,13 +74,17 @@ void FlyingAdcBms::SetBalancing(BalanceCommand cmd)
       break;
    case BAL_DISCHARGE:
       data[1] = 0xF; //Discharge via low side FETs
+      stt = STT_DISCHARGE;
       break;
    case BAL_CHARGE:
       //odd channel: connect UOUTP to GNDA and UOUTN to VCCA
       //even channel: connect UOUTP to VCCA and UOUTN to GNDA
       data[1] = selectedChannel & 1 ? 0xC : 0x3;
+      stt = selectedChannel & 1 ? STT_CHARGENEG : STT_CHARGEPOS;
    }
    SendRecvI2COverSPI(0x41, false, data, 2);
+
+   return stt;
 }
 
 static void BitBangI2CStartAddress(uint8_t address)

@@ -53,52 +53,50 @@
     PARAM_ENTRY(CAT_BMS,     gain,        "mV/dig",  1,      100000, 585,    3   ) \
     PARAM_ENTRY(CAT_BMS,     numchan,     "",        1,      16,     8,      4   ) \
     PARAM_ENTRY(CAT_BMS,     balance,     OFFON,     0,      1,      0,      5   ) \
-    PARAM_ENTRY(CAT_TEST,    i2cout,      "dig",     0,      15,     10,     0   ) \
+    PARAM_ENTRY(CAT_TEST,    enable,      OFFON,     0,      1,      1,      0   ) \
     VALUE_ENTRY(opmode,      OPMODES, 2000 ) \
     VALUE_ENTRY(version,     VERSTR,  2001 ) \
-    VALUE_ENTRY(uavg,        "mV",   2003 ) \
+    VALUE_ENTRY(uavg,        "mV",   2002 ) \
     VALUE_ENTRY(umin,        "mV",   2003 ) \
-    VALUE_ENTRY(umax,        "mV",   2003 ) \
-    VALUE_ENTRY(udelta,      "mV",   2003 ) \
-    VALUE_ENTRY(u0,          "mV",   2003 ) \
-    VALUE_ENTRY(u1,          "mV",   2003 ) \
-    VALUE_ENTRY(u2,          "mV",   2003 ) \
-    VALUE_ENTRY(u3,          "mV",   2003 ) \
-    VALUE_ENTRY(u4,          "mV",   2003 ) \
-    VALUE_ENTRY(u5,          "mV",   2003 ) \
-    VALUE_ENTRY(u6,          "mV",   2003 ) \
-    VALUE_ENTRY(u7,          "mV",   2003 ) \
-    VALUE_ENTRY(u8,          "mV",   2003 ) \
-    VALUE_ENTRY(u9,          "mV",   2003 ) \
-    VALUE_ENTRY(u10,         "mV",   2003 ) \
-    VALUE_ENTRY(u11,         "mV",   2003 ) \
-    VALUE_ENTRY(u12,         "mV",   2003 ) \
-    VALUE_ENTRY(u13,         "mV",   2003 ) \
-    VALUE_ENTRY(u14,         "mV",   2003 ) \
-    VALUE_ENTRY(u15,         "mV",   2003 ) \
-    VALUE_ENTRY(u0cmd,       BAL,   2003 ) \
-    VALUE_ENTRY(u1cmd,       BAL,   2003 ) \
-    VALUE_ENTRY(u2cmd,       BAL,   2003 ) \
-    VALUE_ENTRY(u3cmd,       BAL,   2003 ) \
-    VALUE_ENTRY(u4cmd,       BAL,   2003 ) \
-    VALUE_ENTRY(u5cmd,       BAL,   2003 ) \
-    VALUE_ENTRY(u6cmd,       BAL,   2003 ) \
-    VALUE_ENTRY(u7cmd,       BAL,   2003 ) \
-    VALUE_ENTRY(u8cmd,       BAL,   2003 ) \
-    VALUE_ENTRY(u9cmd,       BAL,   2003 ) \
-    VALUE_ENTRY(u10cmd,      BAL,   2003 ) \
-    VALUE_ENTRY(u11cmd,      BAL,   2003 ) \
-    VALUE_ENTRY(u12cmd,      BAL,   2003 ) \
-    VALUE_ENTRY(u13cmd,      BAL,   2003 ) \
-    VALUE_ENTRY(u14cmd,      BAL,   2003 ) \
-    VALUE_ENTRY(u15cmd,      BAL,   2003 ) \
-    VALUE_ENTRY(cpuload,     "%",    2004 )
+    VALUE_ENTRY(umax,        "mV",   2004 ) \
+    VALUE_ENTRY(udelta,      "mV",   2005 ) \
+    VALUE_ENTRY(u0,          "mV",   2006 ) \
+    VALUE_ENTRY(u1,          "mV",   2007 ) \
+    VALUE_ENTRY(u2,          "mV",   2008 ) \
+    VALUE_ENTRY(u3,          "mV",   2009 ) \
+    VALUE_ENTRY(u4,          "mV",   2010 ) \
+    VALUE_ENTRY(u5,          "mV",   2011 ) \
+    VALUE_ENTRY(u6,          "mV",   2012 ) \
+    VALUE_ENTRY(u7,          "mV",   2013 ) \
+    VALUE_ENTRY(u8,          "mV",   2014 ) \
+    VALUE_ENTRY(u9,          "mV",   2015 ) \
+    VALUE_ENTRY(u10,         "mV",   2016 ) \
+    VALUE_ENTRY(u11,         "mV",   2017 ) \
+    VALUE_ENTRY(u12,         "mV",   2018 ) \
+    VALUE_ENTRY(u13,         "mV",   2019 ) \
+    VALUE_ENTRY(u14,         "mV",   2020 ) \
+    VALUE_ENTRY(u15,         "mV",   2021 ) \
+    VALUE_ENTRY(u0cmd,       BAL,    2022 ) \
+    VALUE_ENTRY(u1cmd,       BAL,    2023 ) \
+    VALUE_ENTRY(u2cmd,       BAL,    2024 ) \
+    VALUE_ENTRY(u3cmd,       BAL,    2025 ) \
+    VALUE_ENTRY(u4cmd,       BAL,    2026 ) \
+    VALUE_ENTRY(u5cmd,       BAL,    2027 ) \
+    VALUE_ENTRY(u6cmd,       BAL,    2028 ) \
+    VALUE_ENTRY(u7cmd,       BAL,    2029 ) \
+    VALUE_ENTRY(u8cmd,       BAL,    2030 ) \
+    VALUE_ENTRY(u9cmd,       BAL,    2031 ) \
+    VALUE_ENTRY(u10cmd,      BAL,    2032 ) \
+    VALUE_ENTRY(u11cmd,      BAL,    2033 ) \
+    VALUE_ENTRY(u12cmd,      BAL,    2034 ) \
+    VALUE_ENTRY(u13cmd,      BAL,    2035 ) \
+    VALUE_ENTRY(u14cmd,      BAL,    2036 ) \
+    VALUE_ENTRY(u15cmd,      BAL,    2037 ) \
+    VALUE_ENTRY(cpuload,     "%",    2038 )
 
 
 /***** Enum String definitions *****/
 #define OPMODES      "0=Off, 1=Run"
-#define CANSPEEDS    "0=125k, 1=250k, 2=500k, 3=800k, 4=1M"
-#define CANPERIODS   "0=100ms, 1=10ms"
 #define OFFON        "0=Off, 1=On"
 #define BAL          "0=None, 1=Discharge, 2=ChargePos, 3=ChargeNeg"
 #define CAT_TEST     "Testing"
