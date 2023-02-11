@@ -45,11 +45,11 @@ static CanMap* canMap;
 
 static void ReadAdc()
 {
-   int totalBalanceCycles = 10;
+   int totalBalanceCycles = 20;
    static uint8_t chan = 0, balanceCycles = 0;
    static float sum = 0, min, max, avg;
    bool balance = Param::GetBool(Param::balance);
-   FlyingAdcBms::BalanceStatus bstt = FlyingAdcBms::STT_OFF;
+   FlyingAdcBms::BalanceStatus bstt;
 
    if (balance)
    {
@@ -79,8 +79,10 @@ static void ReadAdc()
          }
          else
          {
-            FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_OFF);
+            bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_OFF);
+            balanceCycles = 0;
          }
+         Param::SetInt((Param::PARAM_NUM)(Param::u0cmd + chan), bstt);
       }
       else
       {
@@ -90,10 +92,10 @@ static void ReadAdc()
    else
    {
       balanceCycles = totalBalanceCycles;
-      FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_OFF);
+      bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_OFF);
+      Param::SetInt((Param::PARAM_NUM)(Param::u0cmd + chan), bstt);
    }
 
-   Param::SetInt((Param::PARAM_NUM)(Param::u0cmd + chan), bstt);
 
    if (balanceCycles == totalBalanceCycles)
    {
@@ -112,6 +114,7 @@ static void ReadAdc()
       {
          chan = 0;
          avg = sum / Param::GetInt(Param::numchan);
+         Param::SetFloat(Param::utotal, sum);
          Param::SetFloat(Param::uavg, avg);
          Param::SetFloat(Param::umin, min);
          Param::SetFloat(Param::umax, max);

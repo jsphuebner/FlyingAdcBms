@@ -47,7 +47,7 @@
    3. Display values
  */
 //Next param id (increase when adding new parameter!): 3
-//Next value Id: 2005
+//Next value Id: 2040
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
     PARAM_ENTRY(CAT_BMS,     gain,        "mV/dig",  1,      100000, 585,    3   ) \
@@ -60,6 +60,7 @@
     VALUE_ENTRY(umin,        "mV",   2003 ) \
     VALUE_ENTRY(umax,        "mV",   2004 ) \
     VALUE_ENTRY(udelta,      "mV",   2005 ) \
+    VALUE_ENTRY(utotal,      "mV",   2039 ) \
     VALUE_ENTRY(u0,          "mV",   2006 ) \
     VALUE_ENTRY(u1,          "mV",   2007 ) \
     VALUE_ENTRY(u2,          "mV",   2008 ) \
