@@ -37,15 +37,63 @@
 #include "stm32scheduler.h"
 #include "terminalcommands.h"
 #include "flyingadcbms.h"
+#include "bmsfsm.h"
+#include "bmsalgo.h"
+#include "temp_meas.h"
 
 #define PRINT_JSON 0
 
 static Stm32Scheduler* scheduler;
 static CanMap* canMap;
+static BmsFsm* bmsFsm;
+static bool currentSensorOn = false;
+
+static void Accumulate(float sum, float min, float max, float avg)
+{
+   if (bmsFsm->IsFirst())
+   {
+      Param::SetFloat(Param::uavg0, avg);
+      Param::SetFloat(Param::umin0, min);
+      Param::SetFloat(Param::umax0, max);
+
+      float totalSum = sum, totalMin = min, totalMax = max;
+      //If we are the first module accumulate our values with those from the sub modules
+      for (int i = 1; i < bmsFsm->GetNumberOfModules(); i++)
+      {
+         totalSum += Param::GetFloat(bmsFsm->GetDataItem(Param::uavg0, i)) * 16; //TODO use actual number of cells per module
+         totalMin = MIN(totalMin, Param::GetFloat(bmsFsm->GetDataItem(Param::umin0, i)));
+         totalMax = MIN(totalMax, Param::GetFloat(bmsFsm->GetDataItem(Param::umax0, i)));
+      }
+      Param::SetFloat(Param::umin, totalMin);
+      Param::SetFloat(Param::umax, totalMax);
+      Param::SetFloat(Param::uavg, totalSum / (bmsFsm->GetNumberOfModules() * 16));
+      Param::SetFloat(Param::udelta, totalMax - totalMin);
+      Param::SetFloat(Param::utotal, totalSum);
+   }
+   else //if we are a sub module write averages straight to data module
+   {
+      Param::SetFloat(Param::utotal, sum);
+      Param::SetFloat(Param::uavg, avg);
+      Param::SetFloat(Param::umin, min);
+      Param::SetFloat(Param::umax, max);
+      Param::SetFloat(Param::udelta, max - min);
+   }
+}
+
+static void CalculateCurrentLimits()
+{
+   float chargeCurrentLimit = BmsAlgo::GetChargeCurrent(Param::GetFloat(Param::soc));
+   chargeCurrentLimit *= BmsAlgo::LimitMaximumCellVoltage(Param::GetFloat(Param::umax));
+   Param::SetFloat(Param::chargelim, chargeCurrentLimit);
+
+   float dischargeCurrentLimit = 500;
+   dischargeCurrentLimit *= BmsAlgo::LimitMinumumCellVoltage(Param::GetFloat(Param::umin));
+   Param::SetFloat(Param::dischargelim, dischargeCurrentLimit);
+}
 
 static void ReadAdc()
 {
-   int totalBalanceCycles = 20;
+   int totalBalanceCycles = 30;
    static uint8_t chan = 0, balanceCycles = 0;
    static float sum = 0, min, max, avg;
    bool balance = Param::GetBool(Param::balance);
@@ -66,10 +114,7 @@ static void ReadAdc()
       {
          float udc = Param::GetFloat((Param::PARAM_NUM)(Param::u0 + chan));
 
-         //Keep clocking the mux so it doesn't turn off
-         //spi_xfer(SPI1, 0x00C0 | chan);
-
-         if (udc < (avg - 1))
+         if (udc < (avg - 3))
          {
             bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_CHARGE);
          }
@@ -96,7 +141,7 @@ static void ReadAdc()
       Param::SetInt((Param::PARAM_NUM)(Param::u0cmd + chan), bstt);
    }
 
-
+   //Read cell voltage when balancing is turned off
    if (balanceCycles == totalBalanceCycles)
    {
       //Read ADC result before mux change
@@ -114,11 +159,7 @@ static void ReadAdc()
       {
          chan = 0;
          avg = sum / Param::GetInt(Param::numchan);
-         Param::SetFloat(Param::utotal, sum);
-         Param::SetFloat(Param::uavg, avg);
-         Param::SetFloat(Param::umin, min);
-         Param::SetFloat(Param::umax, max);
-         Param::SetFloat(Param::udelta, max - min);
+         Accumulate(sum, min, max, avg);
 
          min = 8000;
          max = 0;
@@ -138,11 +179,40 @@ static void ReadAdc()
 //sample 100ms task
 static void Ms100Task(void)
 {
+   static float estimatedSoc = 0;
    //The boot loader enables the watchdog, we have to reset it
    //at least every 2s or otherwise the controller is hard reset.
    iwdg_reset();
    float cpuLoad = scheduler->GetCpuLoad();
    Param::SetFloat(Param::cpuload, cpuLoad / 10);
+   DigIo::led_out.Toggle();
+   int sensor = Param::GetInt(Param::tempsns);
+
+   if (sensor >= 0)
+      Param::SetFloat(Param::temp, TempMeas::Lookup(AnaIn::temp2.Get(), (TempMeas::Sensors)sensor));
+   else
+      Param::SetInt(Param::temp, 255);
+
+   BmsFsm::bmsstate stt = bmsFsm->Run((BmsFsm::bmsstate)Param::GetInt(Param::opmode));
+
+   if (stt == BmsFsm::RUNBALANCE)
+   {
+      estimatedSoc = BmsAlgo::EstimateSocFromVoltage(Param::GetFloat(Param::umin));
+      Param::SetFloat(Param::soc, estimatedSoc);
+   }
+   else
+   {
+      float asDiff = Param::GetFloat(Param::chargein) - Param::GetFloat(Param::chargeout);
+      float soc = BmsAlgo::CalculateSocFromIntegration(estimatedSoc, asDiff);
+      Param::SetFloat(Param::soc, soc);
+   }
+
+   if (bmsFsm->IsFirst())
+   {
+      CalculateCurrentLimits();
+   }
+
+   Param::SetInt(Param::opmode, stt);
 
    canMap->SendAll();
 }
@@ -151,9 +221,84 @@ static void Ms100Task(void)
 static void Ms25Task(void)
 {
    if (Param::GetBool(Param::enable))
-      ReadAdc();
+   {
+      if (DigIo::muxena_out.Get())
+         ReadAdc();
+      else
+         DigIo::muxena_out.Set();
+   }
    else
+   {
       FlyingAdcBms::MuxOff();
+      DigIo::muxena_out.Clear();
+   }
+}
+
+static void MeasureCurrent()
+{
+   int idcmode = Param::GetInt(Param::idcmode);
+   //s32fp voltage = Param::Get(Param::udc);
+   float current = 0;
+
+   //if (rtc_get_counter_val() < 2) return; //Discard the first few current samples
+
+   if (idcmode == IDC_DIFFERENTIAL || idcmode == IDC_SINGLE)
+   {
+      static int samples = 0;
+      static u32fp amsIn = 0, amsOut = 0;
+      static float idcavg = 0;
+      int curpos = AnaIn::curpos.Get();
+      int curneg = AnaIn::curneg.Get();
+      float idcgain = Param::GetFloat(Param::idcgain);
+      int idcofs = Param::GetInt(Param::idcofs);
+      int rawCurrent = idcmode == IDC_SINGLE ? curpos : curpos - curneg;
+
+      current = (rawCurrent - idcofs) / idcgain;
+
+      if (current < -0.8f)
+      {
+         amsOut += -FP_FROMFLT(current);
+      }
+      else if (current > 0.8f)
+      {
+         amsIn += FP_FROMFLT(current);
+      }
+
+      idcavg += current;
+      samples++;
+
+      if (samples == 100)
+      {
+         s32fp chargein = Param::Get(Param::chargein);
+         s32fp chargeout = Param::Get(Param::chargeout);
+
+         chargein += amsIn / 100;
+         chargeout += amsOut / 100;
+         idcavg /= 100;
+
+         //s32fp power = FP_MUL(voltage, idcavg);
+
+         Param::SetFloat(Param::idcavg, idcavg);
+         //Param::SetFlt(Param::power, power);
+
+         amsIn = 0;
+         amsOut = 0;
+         samples = 0;
+         idcavg = 0;
+
+         //BmsCalculation::SetCharge(chargein, chargeout);
+         Param::SetFixed(Param::chargein, chargein);
+         Param::SetFixed(Param::chargeout, chargeout);
+      }
+   }
+   else //Isa Shunt
+   {
+      //current = FP_FROMINT(IsaShunt::GetCurrent()) / 1000;
+      //s32fp power = FP_MUL(voltage, current);
+      //Param::SetFlt(Param::power, power);
+   }
+
+   Param::SetFloat(Param::idc, current);
 }
 
 /** This function is called when the user changes a parameter */
@@ -162,7 +307,13 @@ void Param::Change(Param::PARAM_NUM paramNum)
    switch (paramNum)
    {
    default:
-      //Handle general parameter changes here. Add paramNum labels for handling specific parameters
+      if (!currentSensorOn && Param::GetInt(Param::idcmode) > 0)
+      {
+         scheduler->AddTask(MeasureCurrent, 10);
+         currentSensorOn = true;
+      }
+
+      BmsAlgo::SetNominalCapacity(Param::GetFloat(Param::nomcap));
       break;
    }
 }
@@ -194,7 +345,9 @@ extern "C" int main(void)
    CanMap cm(&c);
    canMap = &cm;
 
-   cm.SetNodeId(3);
+   BmsFsm fsm(&cm);
+   c.AddReceiveCallback(&fsm);
+   bmsFsm = &fsm;
 
    //This is all we need to do to set up a terminal on USART3
    TerminalCommands::SetCanMap(canMap);
@@ -211,10 +364,8 @@ extern "C" int main(void)
    Param::SetInt(Param::version, 4);
    Param::Change(Param::PARAM_LAST); //Call callback one for general parameter propagation
 
-   //Now all our main() does is running the terminal
-   //All other processing takes place in the scheduler or other interrupt service routines
-   //The terminal has lowest priority, so even loading it down heavily will not disturb
-   //our more important processing routines.
+   DigIo::selfena_out.Set();
+
    while(1)
    {
       char c = 0;
@@ -225,7 +376,6 @@ extern "C" int main(void)
          canMap->SignalPrintComplete();
       }
    }
-
 
    return 0;
 }

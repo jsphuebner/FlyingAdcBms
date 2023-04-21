@@ -48,14 +48,11 @@ void clock_setup(void)
    rcc_periph_clock_enable(RCC_GPIOA);
    rcc_periph_clock_enable(RCC_GPIOB);
    rcc_periph_clock_enable(RCC_GPIOC);
-   rcc_periph_clock_enable(RCC_GPIOD);
    rcc_periph_clock_enable(RCC_USART3);
    rcc_periph_clock_enable(RCC_TIM2); //Scheduler
-   rcc_periph_clock_enable(RCC_TIM4); //Overcurrent / AUX PWM
-   rcc_periph_clock_enable(RCC_DMA1);  //ADC, Encoder and UART receive
+   rcc_periph_clock_enable(RCC_DMA1);  //ADC
    rcc_periph_clock_enable(RCC_ADC1);
    rcc_periph_clock_enable(RCC_CRC);
-   rcc_periph_clock_enable(RCC_AFIO); //CAN
    rcc_periph_clock_enable(RCC_CAN1); //CAN
    rcc_periph_clock_enable(RCC_SPI1);
 }
@@ -86,17 +83,11 @@ void write_bootloader_pininit()
 
    memset32((int*)&commands, 0, PINDEF_NUMWORDS);
 
-   //!!! Customize this to match your project !!!
-   //Here we specify that PC13 be initialized to ON
-   //AND PB1 AND PB2 be initialized to OFF
-   commands.pindef[0].port = GPIOC;
-   commands.pindef[0].pin = GPIO13;
+   //Turn off mux and next module at startup
+   commands.pindef[0].port = GPIOB;
+   commands.pindef[0].pin = GPIO0 | GPIO9;
    commands.pindef[0].inout = PIN_OUT;
-   commands.pindef[0].level = 1;
-   commands.pindef[1].port = GPIOB;
-   commands.pindef[1].pin = GPIO1 | GPIO2;
-   commands.pindef[1].inout = PIN_OUT;
-   commands.pindef[1].level = 0;
+   commands.pindef[0].level = 0;
 
    crc_reset();
    uint32_t crc = crc_calculate_block(((uint32_t*)&commands), PINDEF_NUMWORDS);

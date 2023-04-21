@@ -39,7 +39,7 @@ LDFLAGS    = -Llibopencm3/lib -T$(LDSCRIPT) -march=armv7 -nostartfiles -Wl,--gc-
 OBJSL		  = main.o hwinit.o stm32scheduler.o params.o  \
              my_string.o digio.o my_fp.o printf.o anain.o \
              param_save.o errormessage.o stm32_can.o canhardware.o canmap.o \
-             terminalcommands.o flyingadcbms.o
+             terminalcommands.o flyingadcbms.o bmsfsm.o bmsalgo.o temp_meas.o
 
 OBJS     = $(patsubst %.o,obj/%.o, $(OBJSL))
 vpath %.c src/ libopeninv/src

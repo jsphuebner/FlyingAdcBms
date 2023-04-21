@@ -35,12 +35,15 @@
 		</Build>
 		<Unit filename="Makefile" />
 		<Unit filename="include/anain_prj.h" />
+		<Unit filename="include/bmsalgo.h" />
+		<Unit filename="include/bmsfsm.h" />
 		<Unit filename="include/digio_prj.h" />
 		<Unit filename="include/errormessage_prj.h" />
 		<Unit filename="include/flyingadcbms.h" />
 		<Unit filename="include/hwdefs.h" />
 		<Unit filename="include/hwinit.h" />
 		<Unit filename="include/param_prj.h" />
+		<Unit filename="include/temp_meas.h" />
 		<Unit filename="libopeninv/include/anain.h" />
 		<Unit filename="libopeninv/include/canhardware.h" />
 		<Unit filename="libopeninv/include/canmap.h" />
@@ -89,9 +92,12 @@
 		<Unit filename="libopeninv/src/terminal.cpp" />
 		<Unit filename="libopeninv/src/terminalcommands.cpp" />
 		<Unit filename="linker.ld" />
+		<Unit filename="src/bmsalgo.cpp" />
+		<Unit filename="src/bmsfsm.cpp" />
 		<Unit filename="src/flyingadcbms.cpp" />
 		<Unit filename="src/hwinit.cpp" />
 		<Unit filename="src/main.cpp" />
+		<Unit filename="src/temp_meas.cpp" />
 		<Unit filename="src/terminal_prj.cpp" />
 		<Extensions>
 			<DoxyBlocks>

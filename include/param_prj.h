@@ -39,26 +39,62 @@
  */
 
  //Define a version string of your firmware here
-#define VER 1.00.R
+#define VER 0.03.B
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 3
-//Next value Id: 2040
+//Next param id (increase when adding new parameter!): 14
+//Next value Id: 2066
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
     PARAM_ENTRY(CAT_BMS,     gain,        "mV/dig",  1,      100000, 585,    3   ) \
     PARAM_ENTRY(CAT_BMS,     numchan,     "",        1,      16,     8,      4   ) \
     PARAM_ENTRY(CAT_BMS,     balance,     OFFON,     0,      1,      0,      5   ) \
+    PARAM_ENTRY(CAT_BMS,     idlewait,    "s",       0,      100000, 60,     12  ) \
+    PARAM_ENTRY(CAT_BMS,     nomcap,      "Ah",      0,      1000,   100,    9   ) \
+    PARAM_ENTRY(CAT_SENS,    idcgain,     "dig/A",   -1000,  1000,   10,     6   ) \
+    PARAM_ENTRY(CAT_SENS,    idcofs,      "dig",    -4095,   4095,   0,      7   ) \
+    PARAM_ENTRY(CAT_SENS,    idcmode,     IDCMODES,  0,      3,      0,      8   ) \
+    PARAM_ENTRY(CAT_SENS,    tempsns,     TEMPSNS,   -1,     3,      -1,     13  ) \
+    PARAM_ENTRY(CAT_COMM,    pdobase,     "",        0,      2047,   500,    10  ) \
+    PARAM_ENTRY(CAT_COMM,    sdobase,     "",        0,      63,     3,      11  ) \
     PARAM_ENTRY(CAT_TEST,    enable,      OFFON,     0,      1,      1,      0   ) \
-    VALUE_ENTRY(opmode,      OPMODES, 2000 ) \
-    VALUE_ENTRY(version,     VERSTR,  2001 ) \
+    VALUE_ENTRY(opmode,      OPMODES,2000 ) \
+    VALUE_ENTRY(version,     VERSTR, 2001 ) \
+    VALUE_ENTRY(modaddr,     "",     2045 ) \
+    VALUE_ENTRY(modnum,      "",     2046 ) \
+    VALUE_ENTRY(chargein,    "As",   2040 ) \
+    VALUE_ENTRY(chargeout,   "As",   2041 ) \
+    VALUE_ENTRY(soc,         "As",   2065 ) \
+    VALUE_ENTRY(chargelim,   "A",    2066 ) \
+    VALUE_ENTRY(dischargelim,"A",    2067 ) \
+    VALUE_ENTRY(idc,         "A",    2042 ) \
+    VALUE_ENTRY(idcavg,      "A",    2043 ) \
+    VALUE_ENTRY(temp,        "°C",   2044 ) \
     VALUE_ENTRY(uavg,        "mV",   2002 ) \
     VALUE_ENTRY(umin,        "mV",   2003 ) \
     VALUE_ENTRY(umax,        "mV",   2004 ) \
+    VALUE_ENTRY(uavg0,       "mV",   2047 ) \
+    VALUE_ENTRY(umin0,       "mV",   2048 ) \
+    VALUE_ENTRY(umax0,       "mV",   2049 ) \
+    VALUE_ENTRY(uavg1,       "mV",   2050 ) \
+    VALUE_ENTRY(umin1,       "mV",   2051 ) \
+    VALUE_ENTRY(umax1,       "mV",   2052 ) \
+    VALUE_ENTRY(uavg2,       "mV",   2053 ) \
+    VALUE_ENTRY(umin2,       "mV",   2054 ) \
+    VALUE_ENTRY(umax2,       "mV",   2055 ) \
+    VALUE_ENTRY(uavg3,       "mV",   2056 ) \
+    VALUE_ENTRY(umin3,       "mV",   2057 ) \
+    VALUE_ENTRY(umax3,       "mV",   2058 ) \
+    VALUE_ENTRY(uavg4,       "mV",   2059 ) \
+    VALUE_ENTRY(umin4,       "mV",   2060 ) \
+    VALUE_ENTRY(umax4,       "mV",   2061 ) \
+    VALUE_ENTRY(uavg5,       "mV",   2062 ) \
+    VALUE_ENTRY(umin5,       "mV",   2063 ) \
+    VALUE_ENTRY(umax5,       "mV",   2064 ) \
     VALUE_ENTRY(udelta,      "mV",   2005 ) \
     VALUE_ENTRY(utotal,      "mV",   2039 ) \
     VALUE_ENTRY(u0,          "mV",   2006 ) \
@@ -97,16 +133,24 @@
 
 
 /***** Enum String definitions *****/
-#define OPMODES      "0=Off, 1=Run"
+#define OPMODES      "0=Boot, 1=GetAddr, 2=SetAddr, 3=Init, 4=Run, 5=RunBalance"
 #define OFFON        "0=Off, 1=On"
 #define BAL          "0=None, 1=Discharge, 2=ChargePos, 3=ChargeNeg"
+#define IDCMODES     "0=Off, 1=AdcSingle, 2=AdcDifferential, 3=IsaCan"
+#define TEMPSNS      "-1=Off, 0=JCurve, 1=KTY81, 2=PT1000, 3=Leaf"
 #define CAT_TEST     "Testing"
 #define CAT_BMS      "BMS"
+#define CAT_SENS     "Sensor setup"
+#define CAT_COMM     "Communication"
 
-#define VERSTR STRINGIFY(4=VER-name)
+#define VERSTR STRINGIFY(4=VER)
 
 /***** enums ******/
 
+enum
+{
+   IDC_OFF, IDC_SINGLE, IDC_DIFFERENTIAL, IDC_ISACAN
+};
 
 enum _canspeeds
 {

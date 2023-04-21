@@ -16,27 +16,36 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef FLYINGADCBMS_H
-#define FLYINGADCBMS_H
+#ifndef BMSFSM_H
+#define BMSFSM_H
+#include "canmap.h"
+#include "canhardware.h"
+#include "params.h"
 
-
-class FlyingAdcBms
+class BmsFsm: public CanCallback
 {
    public:
-      enum BalanceCommand { BAL_OFF, BAL_DISCHARGE, BAL_CHARGE };
-      enum BalanceStatus  { STT_OFF, STT_DISCHARGE, STT_CHARGEPOS, STT_CHARGENEG };
+      enum bmsstate { BOOT, GET_ADDR, SET_ADDR, INIT, RUN, RUNBALANCE };
 
-      static void Init();
-      static void MuxOff();
-      static void SelectChannel(uint8_t channel);
-      static void StartAdc();
-      static int32_t GetRawResult();
-      static BalanceStatus SetBalancing(BalanceCommand cmd);
-
-   protected:
+      BmsFsm(CanMap* cm);
+      bmsstate Run(bmsstate currentState);
+      int GetNumberOfModules() { return numModules; }
+      Param::PARAM_NUM GetDataItem(Param::PARAM_NUM baseItem, int modNum = -1);
+      bool HandleRx(uint32_t canId, uint32_t data[2]);
+      void HandleClear();
+      bool IsFirst();
 
    private:
-      static uint8_t selectedChannel, previousChannel;
+      void MapCanSubmodule();
+      void MapCanMainmodule();
+
+      CanMap *canMap;
+      bool recvBoot;
+      bool isMain;
+      uint8_t recvAddr;
+      uint8_t ourAddr;
+      uint8_t numModules;
+      uint32_t cycles;
 };
 
-#endif // FLYINGADCBMS_H
+#endif // BMSFSM_H

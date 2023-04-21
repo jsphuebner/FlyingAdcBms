@@ -20,37 +20,61 @@
 #include "flyingadcbms.h"
 #include "digio.h"
 
-#define I2C_DELAY 10
+#define I2C_DELAY       10
+#define READ            true
+#define WRITE           false
+#define ADC_ADDR        0x68
+#define DIO_ADDR        0x41
+//ADC configuration register defines (only those we need)
+#define ADC_START       0x80
+#define ADC_RATE_240SPS 0x0
+#define ADC_RATE_60SPS  0x4
+#define ADC_RATE_15SPS  0x8
+//Mux control words
+#define MUX_OFF         0x0080
+#define MUX_SELECT      0x80C0
 
 static void SendRecvI2COverSPI(uint8_t address, bool read, uint8_t* data, uint8_t len);
 
 uint8_t FlyingAdcBms::selectedChannel = 0;
 uint8_t FlyingAdcBms::previousChannel = 0;
+static bool lock = false;
+
+void FlyingAdcBms::Init()
+{
+   uint8_t data[2] = { 0x01, 0x0A }; //output port register: all FETs off
+
+   SendRecvI2COverSPI(DIO_ADDR, WRITE, data, 2);
+   data[0] = 0x3; //output port register
+   data[1] = 0x0; //All pins as output
+   SendRecvI2COverSPI(DIO_ADDR, WRITE, data, 2);
+}
 
 void FlyingAdcBms::MuxOff()
 {
    //Turn off mux
-   spi_xfer(SPI1, 0x0080);
+   spi_xfer(SPI1, MUX_OFF);
+   SetBalancing(BAL_OFF);
 }
 
 void FlyingAdcBms::SelectChannel(uint8_t channel)
 {
    selectedChannel = channel;
    //Select MUX channel with deadtime insertion
-   spi_xfer(SPI1, 0x80C0 | channel);
+   spi_xfer(SPI1, MUX_SELECT | channel);
 }
 
 void FlyingAdcBms::StartAdc()
 {
-   uint8_t byte = 0x84; //Start in manual mode with 14 bit/60 SPS resolution
-   SendRecvI2COverSPI(0x68, false, &byte, 1);
+   uint8_t byte = ADC_START | ADC_RATE_60SPS; //Start in manual mode with 14 bit/60 SPS resolution
+   SendRecvI2COverSPI(ADC_ADDR, WRITE, &byte, 1);
    previousChannel = selectedChannel; //now we can switch the mux and still read the correct result
 }
 
 int32_t FlyingAdcBms::GetRawResult()
 {
    uint8_t data[3];
-   SendRecvI2COverSPI(0x68, true, data, 3);
+   SendRecvI2COverSPI(ADC_ADDR, READ, data, 3);
    int32_t result = (((int16_t)(data[0] << 8)) + data[1]);
 
    if (previousChannel & 1) result = -result;
@@ -61,9 +85,9 @@ int32_t FlyingAdcBms::GetRawResult()
 FlyingAdcBms::BalanceStatus FlyingAdcBms::SetBalancing(BalanceCommand cmd)
 {
    BalanceStatus stt = STT_OFF;
-   uint8_t data[2] = { 0x03, 0x00 }; //direction register: all outputs
+   uint8_t data[2] = { 0x01, 0x00 };
 
-   SendRecvI2COverSPI(0x41, false, data, 2);
+   //SendRecvI2COverSPI(DIO_ADDR, WRITE, data, 2);
 
    data[0] = 0x1; //output port register
 
@@ -82,7 +106,7 @@ FlyingAdcBms::BalanceStatus FlyingAdcBms::SetBalancing(BalanceCommand cmd)
       data[1] = selectedChannel & 1 ? 0xC : 0x3;
       stt = selectedChannel & 1 ? STT_CHARGENEG : STT_CHARGEPOS;
    }
-   SendRecvI2COverSPI(0x41, false, data, 2);
+   SendRecvI2COverSPI(DIO_ADDR, WRITE, data, 2);
 
    return stt;
 }
@@ -140,8 +164,6 @@ static void BitBangI2CStop()
    for (volatile int i = 0; i < I2C_DELAY; i++);
    DigIo::i2c_do.Set(); //data high -> STOP
 }
-
-static bool lock = false;
 
 static void SendRecvI2COverSPI(uint8_t address, bool read, uint8_t* data, uint8_t len)
 {
