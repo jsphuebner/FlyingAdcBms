@@ -27,7 +27,6 @@ extern "C"
 #endif
 
 void clock_setup(void);
-void spi_setup(void);
 void nvic_setup(void);
 void rtc_setup(void);
 void write_bootloader_pininit();

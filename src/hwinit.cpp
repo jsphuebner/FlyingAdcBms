@@ -54,18 +54,7 @@ void clock_setup(void)
    rcc_periph_clock_enable(RCC_ADC1);
    rcc_periph_clock_enable(RCC_CRC);
    rcc_periph_clock_enable(RCC_CAN1); //CAN
-   rcc_periph_clock_enable(RCC_SPI1);
-}
-
-void spi_setup()
-{
-   spi_init_master(SPI1, SPI_CR1_BAUDRATE_FPCLK_DIV_256, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
-                  SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_16BIT, SPI_CR1_MSBFIRST);
-
-   spi_enable_software_slave_management(SPI1);
-   spi_set_nss_high(SPI1);
-   gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO5 | GPIO7);
-   spi_enable(SPI1);
+   rcc_periph_clock_enable(RCC_AFIO); //Needed to disable JTAG!
 }
 
 /* Some pins should never be left floating at any time
@@ -85,7 +74,7 @@ void write_bootloader_pininit()
 
    //Turn off mux and next module at startup
    commands.pindef[0].port = GPIOB;
-   commands.pindef[0].pin = GPIO0 | GPIO9;
+   commands.pindef[0].pin = 255;
    commands.pindef[0].inout = PIN_OUT;
    commands.pindef[0].level = 0;
 

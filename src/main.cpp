@@ -220,17 +220,15 @@ static void Ms100Task(void)
 //sample 10 ms task
 static void Ms25Task(void)
 {
-   if (Param::GetBool(Param::enable))
+   int opmode = Param::GetInt(Param::opmode);
+
+   if (Param::GetBool(Param::enable) && (opmode == BmsFsm::RUN || opmode == BmsFsm::RUNBALANCE))
    {
-      if (DigIo::muxena_out.Get())
-         ReadAdc();
-      else
-         DigIo::muxena_out.Set();
+      ReadAdc();
    }
    else
    {
       FlyingAdcBms::MuxOff();
-      DigIo::muxena_out.Clear();
    }
 }
 
@@ -333,9 +331,10 @@ extern "C" int main(void)
    DIG_IO_CONFIGURE(DIG_IO_LIST);
    AnaIn::Start(); //Starts background ADC conversion via DMA
    write_bootloader_pininit(); //Instructs boot loader to initialize certain pins
+   //JTAG must be turned off as it steals PB4
+   gpio_primary_remap(AFIO_MAPR_SWJ_CFG_JTAG_OFF_SW_ON, 0);
 
    nvic_setup(); //Set up some interrupts
-   spi_setup();
    parm_load(); //Load stored parameters
 
    Stm32Scheduler s(TIM2); //We never exit main so it's ok to put it on stack

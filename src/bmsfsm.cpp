@@ -79,7 +79,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
       FlyingAdcBms::Init();
       return RUN;
    case RUN:
-      if (IsFirst() && ABS(Param::GetFloat(Param::idc)) < 0.8f)
+      if (IsFirst() && ABS(Param::GetFloat(Param::idcavg)) < 0.8f)
       {
          cycles++;
 
@@ -97,7 +97,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
    case RUNBALANCE:
       cycles++;
 
-      if (ABS(Param::GetFloat(Param::idc)) > 0.8f)
+      if (ABS(Param::GetFloat(Param::idcavg)) > 0.8f)
       {
          return RUN;
       }

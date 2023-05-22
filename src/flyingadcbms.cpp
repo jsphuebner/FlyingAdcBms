@@ -16,7 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <libopencm3/stm32/spi.h>
+#include <libopencm3/stm32/gpio.h>
 #include "flyingadcbms.h"
 #include "digio.h"
 
@@ -42,26 +42,48 @@ static bool lock = false;
 
 void FlyingAdcBms::Init()
 {
-   uint8_t data[2] = { 0x01, 0x0A }; //output port register: all FETs off
-
-   SendRecvI2COverSPI(DIO_ADDR, WRITE, data, 2);
-   data[0] = 0x3; //output port register
-   data[1] = 0x0; //All pins as output
-   SendRecvI2COverSPI(DIO_ADDR, WRITE, data, 2);
+   gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, 255);
 }
 
 void FlyingAdcBms::MuxOff()
 {
    //Turn off mux
-   spi_xfer(SPI1, MUX_OFF);
+   gpio_clear(GPIOB, 255);
    SetBalancing(BAL_OFF);
 }
 
 void FlyingAdcBms::SelectChannel(uint8_t channel)
 {
+   uint8_t data[2];
+
    selectedChannel = channel;
-   //Select MUX channel with deadtime insertion
-   spi_xfer(SPI1, MUX_SELECT | channel);
+   //Turn off all channels
+   gpio_clear(GPIOB, 255);
+
+   //This creates some delay and should be done anyway.
+   data[0] = 0x3; //output port register
+   data[1] = 0x0; //All pins as output
+   SendRecvI2COverSPI(DIO_ADDR, WRITE, data, 2);
+
+   if (channel == 15) //special case
+   {
+      //Turn on G16 via GPIOB3 and G15 via Multiplexer
+      gpio_set(GPIOB, GPIO3 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
+   }
+   else if (channel & 1) //odd channel
+   {
+      //Example Chan9: turn on G10 (=even mux word 5) and G9 (odd mux word 4)
+      uint8_t evenMuxWord = channel / 2 + 1;
+      uint8_t oddMuxWord = (channel / 2) << 4;
+      gpio_set(GPIOB, evenMuxWord | oddMuxWord | GPIO7);
+   }
+   else //even channel
+   {
+      //Example Chan8: turn on G8 (=even mux word 4) and G9 (odd mux word 4)
+      uint8_t evenMuxWord = channel / 2;
+      uint8_t oddMuxWord = evenMuxWord << 4;
+      gpio_set(GPIOB, evenMuxWord | oddMuxWord | GPIO7);
+   }
 }
 
 void FlyingAdcBms::StartAdc()
@@ -76,7 +98,7 @@ int32_t FlyingAdcBms::GetRawResult()
    uint8_t data[3];
    SendRecvI2COverSPI(ADC_ADDR, READ, data, 3);
    int32_t result = (((int16_t)(data[0] << 8)) + data[1]);
-
+   //Odd channels are connected to ADC with reversed polarity
    if (previousChannel & 1) result = -result;
 
    return result;
@@ -85,9 +107,7 @@ int32_t FlyingAdcBms::GetRawResult()
 FlyingAdcBms::BalanceStatus FlyingAdcBms::SetBalancing(BalanceCommand cmd)
 {
    BalanceStatus stt = STT_OFF;
-   uint8_t data[2] = { 0x01, 0x00 };
-
-   //SendRecvI2COverSPI(DIO_ADDR, WRITE, data, 2);
+   uint8_t data[2];
 
    data[0] = 0x1; //output port register
 
