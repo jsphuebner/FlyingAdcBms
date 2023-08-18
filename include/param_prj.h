@@ -39,7 +39,7 @@
  */
 
  //Define a version string of your firmware here
-#define VER 0.04.B
+#define VER 0.05.B
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
@@ -50,11 +50,25 @@
 //Next value Id: 2066
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
-    PARAM_ENTRY(CAT_BMS,     gain,        "mV/dig",  1,      100000, 585,    3   ) \
-    PARAM_ENTRY(CAT_BMS,     numchan,     "",        1,      16,     8,      4   ) \
+    PARAM_ENTRY(CAT_BMS,     gain,        "mV/dig",  1,      1000,   588,    3   ) \
+    PARAM_ENTRY(CAT_BMS,     correction0, "ppm",     -10000, 10000,  -1250,  14  ) \
+    PARAM_ENTRY(CAT_BMS,     correction1, "ppm",     -10000, 10000,  1500,   15  ) \
+    PARAM_ENTRY(CAT_BMS,     correction15,"ppm",     -10000, 10000,  1000,   16  ) \
+    PARAM_ENTRY(CAT_BMS,     numchan,     "",        1,      16,     16,     4   ) \
     PARAM_ENTRY(CAT_BMS,     balance,     OFFON,     0,      1,      0,      5   ) \
     PARAM_ENTRY(CAT_BMS,     idlewait,    "s",       0,      100000, 60,     12  ) \
     PARAM_ENTRY(CAT_BMS,     nomcap,      "Ah",      0,      1000,   100,    9   ) \
+    PARAM_ENTRY(CAT_BAT,     ucell0soc,   "mV",      2000,   4500,   3300,   17  ) \
+    PARAM_ENTRY(CAT_BAT,     ucell10soc,  "mV",      2000,   4500,   3400,   18  ) \
+    PARAM_ENTRY(CAT_BAT,     ucell20soc,  "mV",      2000,   4500,   3450,   19  ) \
+    PARAM_ENTRY(CAT_BAT,     ucell30soc,  "mV",      2000,   4500,   3500,   20  ) \
+    PARAM_ENTRY(CAT_BAT,     ucell40soc,  "mV",      2000,   4500,   3560,   21  ) \
+    PARAM_ENTRY(CAT_BAT,     ucell50soc,  "mV",      2000,   4500,   3600,   22  ) \
+    PARAM_ENTRY(CAT_BAT,     ucell60soc,  "mV",      2000,   4500,   3700,   23  ) \
+    PARAM_ENTRY(CAT_BAT,     ucell70soc,  "mV",      2000,   4500,   3800,   24  ) \
+    PARAM_ENTRY(CAT_BAT,     ucell80soc,  "mV",      2000,   4500,   4000,   25  ) \
+    PARAM_ENTRY(CAT_BAT,     ucell90soc,  "mV",      2000,   4500,   4100,   26  ) \
+    PARAM_ENTRY(CAT_BAT,     ucell100soc, "mV",      2000,   4500,   4200,   27  ) \
     PARAM_ENTRY(CAT_SENS,    idcgain,     "dig/A",   -1000,  1000,   10,     6   ) \
     PARAM_ENTRY(CAT_SENS,    idcofs,      "dig",    -4095,   4095,   0,      7   ) \
     PARAM_ENTRY(CAT_SENS,    idcmode,     IDCMODES,  0,      3,      0,      8   ) \
@@ -68,9 +82,9 @@
     VALUE_ENTRY(modnum,      "",     2046 ) \
     VALUE_ENTRY(chargein,    "As",   2040 ) \
     VALUE_ENTRY(chargeout,   "As",   2041 ) \
-    VALUE_ENTRY(soc,         "As",   2065 ) \
-    VALUE_ENTRY(chargelim,   "A",    2066 ) \
-    VALUE_ENTRY(dischargelim,"A",    2067 ) \
+    VALUE_ENTRY(soc,         "%",    2071 ) \
+    VALUE_ENTRY(chargelim,   "A",    2072 ) \
+    VALUE_ENTRY(dischargelim,"A",    2073 ) \
     VALUE_ENTRY(idc,         "A",    2042 ) \
     VALUE_ENTRY(idcavg,      "A",    2043 ) \
     VALUE_ENTRY(temp,        "°C",   2044 ) \
@@ -95,6 +109,12 @@
     VALUE_ENTRY(uavg5,       "mV",   2062 ) \
     VALUE_ENTRY(umin5,       "mV",   2063 ) \
     VALUE_ENTRY(umax5,       "mV",   2064 ) \
+    VALUE_ENTRY(uavg6,       "mV",   2065 ) \
+    VALUE_ENTRY(umin6,       "mV",   2066 ) \
+    VALUE_ENTRY(umax6,       "mV",   2067 ) \
+    VALUE_ENTRY(uavg7,       "mV",   2068 ) \
+    VALUE_ENTRY(umin7,       "mV",   2069 ) \
+    VALUE_ENTRY(umax7,       "mV",   2070 ) \
     VALUE_ENTRY(udelta,      "mV",   2005 ) \
     VALUE_ENTRY(utotal,      "mV",   2039 ) \
     VALUE_ENTRY(u0,          "mV",   2006 ) \
@@ -142,6 +162,7 @@
 #define CAT_BMS      "BMS"
 #define CAT_SENS     "Sensor setup"
 #define CAT_COMM     "Communication"
+#define CAT_BAT      "Battery Characteristics"
 
 #define VERSTR STRINGIFY(4=VER)
 

@@ -144,10 +144,17 @@ static void ReadAdc()
    //Read cell voltage when balancing is turned off
    if (balanceCycles == totalBalanceCycles)
    {
-      //Read ADC result before mux change
-      float udc = FlyingAdcBms::GetRawResult();
+      float gain = Param::GetFloat(Param::gain);
 
-      udc *= Param::GetFloat(Param::gain) / 1000.0f;
+      if (chan == 0)
+         gain *= 1 + Param::GetFloat(Param::correction0) / 1000000.0f;
+      else if (chan == 1)
+         gain *= 1 + Param::GetFloat(Param::correction1) / 1000000.0f;
+      else if (chan == 15)
+         gain *= 1 + Param::GetFloat(Param::correction15) / 1000000.0f;
+
+      //Read ADC result before mux change
+      float udc = FlyingAdcBms::GetResult(gain / 1000.0f);
 
       Param::SetFloat((Param::PARAM_NUM)(Param::u0 + chan), udc);
 
@@ -312,6 +319,10 @@ void Param::Change(Param::PARAM_NUM paramNum)
       }
 
       BmsAlgo::SetNominalCapacity(Param::GetFloat(Param::nomcap));
+
+      for (int i = 0; i < 10; i++)
+         BmsAlgo::SetSocLookupPoint(i * 10, Param::GetInt((Param::PARAM_NUM)(Param::ucell0soc + i)));
+
       break;
    }
 }

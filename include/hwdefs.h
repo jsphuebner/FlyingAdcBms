@@ -4,7 +4,7 @@
 
 //Common for any config
 
-#define RCC_CLOCK_SETUP()  rcc_clock_setup_pll(&rcc_hsi_configs[RCC_CLOCK_HSI_24MHZ])
+#define RCC_CLOCK_SETUP()  rcc_clock_setup_pll(&rcc_hsi_configs[RCC_CLOCK_HSI_64MHZ])
 
 //Address of parameter block in flash
 #define FLASH_PAGE_SIZE 1024

@@ -76,10 +76,28 @@ float BmsAlgo::LimitMinumumCellVoltage(float minVoltage)
    return factor;
 }
 
+/** \brief Returns a derating factor to stay below maximum cell voltage
+ *
+ * \param maxVoltage the highest cell voltage of the entire pack
+ * \return float derating factor
+ *
+ */
 float BmsAlgo::LimitMaximumCellVoltage(float maxVoltage)
 {
    float factor = (4200 - maxVoltage) / 10; //start limiting 10mV before hitting 4.2V
    factor = MAX(0, factor);
    factor = MIN(1, factor);
    return factor;
+}
+
+/** \brief Sets a lookup point for open circuit SoC estimation
+ *
+ * \param soc soc at multiples of 10, so 0, 10, 20,...,100
+ * \param voltage open circuit voltage at that SoC
+ *
+ */
+void BmsAlgo::SetSocLookupPoint(uint8_t soc, uint16_t voltage)
+{
+   if (soc > 100) return;
+   voltageToSoc[soc / 10] = voltage;
 }

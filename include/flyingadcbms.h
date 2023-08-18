@@ -30,7 +30,7 @@ class FlyingAdcBms
       static void MuxOff();
       static void SelectChannel(uint8_t channel);
       static void StartAdc();
-      static int32_t GetRawResult();
+      static float GetResult(float gain);
       static BalanceStatus SetBalancing(BalanceCommand cmd);
 
    protected:

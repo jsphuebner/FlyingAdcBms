@@ -20,7 +20,7 @@
 #include "flyingadcbms.h"
 #include "digio.h"
 
-#define I2C_DELAY       10
+#define I2C_DELAY       30
 #define READ            true
 #define WRITE           false
 #define ADC_ADDR        0x68
@@ -93,13 +93,16 @@ void FlyingAdcBms::StartAdc()
    previousChannel = selectedChannel; //now we can switch the mux and still read the correct result
 }
 
-int32_t FlyingAdcBms::GetRawResult()
+float FlyingAdcBms::GetResult(float gain)
 {
    uint8_t data[3];
    SendRecvI2COverSPI(ADC_ADDR, READ, data, 3);
-   int32_t result = (((int16_t)(data[0] << 8)) + data[1]);
+   int32_t adc = (((int16_t)(data[0] << 8)) + data[1]);
+   float result = adc;
    //Odd channels are connected to ADC with reversed polarity
    if (previousChannel & 1) result = -result;
+
+   result *= gain;
 
    return result;
 }
@@ -114,7 +117,9 @@ FlyingAdcBms::BalanceStatus FlyingAdcBms::SetBalancing(BalanceCommand cmd)
    switch (cmd)
    {
    case BAL_OFF:
-      data[1] = 0xA; //all FETs off
+      //odd channel: connect UOUTP to GNDA
+      //even channel: UOUTN to GNDA
+      data[1] = 0xA; //selectedChannel & 1 ? 0xE : 0xB;
       break;
    case BAL_DISCHARGE:
       data[1] = 0xF; //Discharge via low side FETs

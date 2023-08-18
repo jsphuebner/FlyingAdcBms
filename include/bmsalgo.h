@@ -30,6 +30,7 @@ class BmsAlgo
       static float LimitMaximumCellVoltage(float maxVoltage);
       static float LimitMinumumCellVoltage(float minVoltage);
       static void SetNominalCapacity(float c) { nominalCapacity = c; }
+      static void SetSocLookupPoint(uint8_t soc, uint16_t voltage);
 
    private:
       static float nominalCapacity;

@@ -25,7 +25,7 @@
 #define IS_FIRST_THRESH 1800
 
 BmsFsm::BmsFsm(CanMap* cm)
-   : canMap(cm), recvBoot(false), isMain(false), cycles(0)
+   : canMap(cm), recvBoot(false), isMain(false), numModules(1), cycles(0)
 {
    HandleClear();
    recvAddr = Param::GetInt(Param::sdobase);
@@ -133,7 +133,7 @@ bool BmsFsm::HandleRx(uint32_t canId, uint32_t data[2])
       recvAddr = data[1] & 0xFF;
       //Whenever we receive an address it means the number of modules increased
       //subtract the base address to arrive at the actual number of modules
-      numModules = recvAddr - Param::GetInt(Param::sdobase);
+      numModules = recvAddr - Param::GetInt(Param::sdobase) + 1;
       Param::SetInt(Param::modnum, numModules);
       break;
    case 0x7de:
@@ -164,7 +164,7 @@ void BmsFsm::MapCanSubmodule()
 
 void BmsFsm::MapCanMainmodule()
 {
-   for (int i = 1; i < 6; i++)
+   for (int i = 1; i < GetMaxSubmodules(); i++)
    {
       int id = Param::GetInt(Param::pdobase) + i;
       canMap->AddRecv(GetDataItem(Param::umin0, i), id, 0, 16, 1);

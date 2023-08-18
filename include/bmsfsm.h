@@ -34,6 +34,7 @@ class BmsFsm: public CanCallback
       bool HandleRx(uint32_t canId, uint32_t data[2]);
       void HandleClear();
       bool IsFirst();
+      uint8_t GetMaxSubmodules() { return 8; }
 
    private:
       void MapCanSubmodule();
