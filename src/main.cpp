@@ -24,6 +24,7 @@
 #include <libopencm3/stm32/iwdg.h>
 #include "stm32_can.h"
 #include "canmap.h"
+#include "cansdo.h"
 #include "terminal.h"
 #include "params.h"
 #include "hwdefs.h"
@@ -354,19 +355,14 @@ extern "C" int main(void)
    Stm32Can c(CAN1, CanHardware::Baud500);
    CanMap cm(&c);
    canMap = &cm;
+   CanSdo sdo(&c, &cm);
 
-   BmsFsm fsm(&cm);
+   BmsFsm fsm(&cm, &sdo);
    c.AddReceiveCallback(&fsm);
    bmsFsm = &fsm;
 
-   //This is all we need to do to set up a terminal on USART3
    TerminalCommands::SetCanMap(canMap);
 
-   //Up to four tasks can be added to each timer scheduler
-   //AddTask takes a function pointer and a calling interval in milliseconds.
-   //The longest interval is 655ms due to hardware restrictions
-   //You have to enable the interrupt (int this case for TIM2) in nvic_setup()
-   //There you can also configure the priority of the scheduler over other interrupts
    s.AddTask(Ms25Task, 25);
    s.AddTask(Ms100Task, 100);
 
@@ -380,10 +376,10 @@ extern "C" int main(void)
    {
       char c = 0;
 
-      if (canMap->GetPrintRequest() == PRINT_JSON)
+      if (sdo.GetPrintRequest() == PRINT_JSON)
       {
-         TerminalCommands::PrintParamsJson(canMap, &c);
-         canMap->SignalPrintComplete();
+         TerminalCommands::PrintParamsJson(&sdo, &c);
+         sdo.SignalPrintComplete();
       }
    }
 

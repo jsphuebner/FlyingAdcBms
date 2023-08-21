@@ -23,10 +23,12 @@
 #include "flyingadcbms.h"
 
 #define IS_FIRST_THRESH 1800
+#define SDO_INDEX_PARAMS      0x2000
 
-BmsFsm::BmsFsm(CanMap* cm)
-   : canMap(cm), recvBoot(false), isMain(false), numModules(1), cycles(0)
+BmsFsm::BmsFsm(CanMap* cm, CanSdo* cs)
+   : canMap(cm), canSdo(cs), isMain(false), infoIndex(1), numModules(1), cycles(0)
 {
+   cm->GetHardware()->AddReceiveCallback(this);
    HandleClear();
    recvAddr = Param::GetInt(Param::sdobase);
    ourAddr = recvAddr;
@@ -35,17 +37,19 @@ BmsFsm::BmsFsm(CanMap* cm)
 BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
 {
    uint32_t data[2] = { 0 };
+   uint32_t sdoReply;
 
    switch (currentState)
    {
    case BOOT:
       if (IsFirst())
       {
-         canMap->SetNodeId(recvAddr);
-         DigIo::nextena_out.Set();
+         canSdo->SetNodeId(recvAddr);
          canMap->Clear();
+         DigIo::nextena_out.Set();
          isMain = true;
          MapCanMainmodule();
+         Param::SetInt(Param::totalcells, Param::GetInt(Param::numchan));
          return SET_ADDR;
       }
       else
@@ -58,7 +62,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
       if (recvAddr > 0)
       {
          ourAddr = recvAddr;
-         canMap->SetNodeId(recvAddr);
+         canSdo->SetNodeId(ourAddr);
          DigIo::nextena_out.Set();
          canMap->Clear();
          MapCanSubmodule();
@@ -72,8 +76,32 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
       {
          data[1] = recvAddr + 1;
          canMap->GetHardware()->Send(0x7dd, data);
-         return INIT;
+         cycles = 0;
+         return isMain ? REQ_INFO : INIT;
       }
+      break;
+   case REQ_INFO:
+      cycles++;
+
+      if (cycles == 10)
+      {
+         canSdo->SDORead(infoIndex + Param::GetInt(Param::sdobase), SDO_INDEX_PARAMS, (uint8_t)Param::numchan);
+
+         return RECV_INFO;
+      }
+      break;
+   case RECV_INFO:
+      if (canSdo->SDOReadReply(sdoReply))
+      {
+         numChan[infoIndex] = FP_TOINT(sdoReply); //numbers are transmitted in 5 bit fixed point
+         Param::SetInt(Param::totalcells, Param::GetInt(Param::totalcells) + numChan[infoIndex]);
+         numModules++;
+         Param::SetInt(Param::modnum, numModules);
+         infoIndex++;
+         cycles = 0;
+         return infoIndex < MAX_SUB_MODULES ? REQ_INFO : INIT;
+      }
+      return INIT;
       break;
    case INIT:
       FlyingAdcBms::Init();
@@ -122,7 +150,6 @@ Param::PARAM_NUM BmsFsm::GetDataItem(Param::PARAM_NUM baseItem, int modNum)
 void BmsFsm::HandleClear()
 {
    canMap->GetHardware()->RegisterUserMessage(0x7dd);
-   canMap->GetHardware()->RegisterUserMessage(0x7de);
 }
 
 bool BmsFsm::HandleRx(uint32_t canId, uint32_t data[2])
@@ -131,18 +158,9 @@ bool BmsFsm::HandleRx(uint32_t canId, uint32_t data[2])
    {
    case 0x7dd:
       recvAddr = data[1] & 0xFF;
-      //Whenever we receive an address it means the number of modules increased
-      //subtract the base address to arrive at the actual number of modules
-      numModules = recvAddr - Param::GetInt(Param::sdobase) + 1;
-      Param::SetInt(Param::modnum, numModules);
-      break;
-   case 0x7de:
-      recvBoot = true;
-      break;
-   default:
-      return false;
+      return true;
    }
-   return true;
+   return false;
 }
 
 bool BmsFsm::IsFirst()
@@ -158,7 +176,6 @@ void BmsFsm::MapCanSubmodule()
    canMap->AddSend(Param::umin, id, 0, 16, 1);
    canMap->AddSend(Param::umax, id, 16, 16, 1);
    canMap->AddSend(Param::uavg, id, 32, 16, 1);
-   canMap->AddSend(Param::numchan, id, 48, 8, 1);
    canMap->AddSend(Param::temp, id, 56, 8, 1, 40);
 }
 

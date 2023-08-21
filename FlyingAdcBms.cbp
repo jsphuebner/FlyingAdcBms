@@ -22,6 +22,7 @@
 				<Option compiler="armelfgcc" />
 				<Compiler>
 					<Add directory="include" />
+					<Add directory="libopeninv/include" />
 				</Compiler>
 				<MakeCommands>
 					<Build command="CONTROL=SINE make" />
@@ -47,6 +48,7 @@
 		<Unit filename="libopeninv/include/anain.h" />
 		<Unit filename="libopeninv/include/canhardware.h" />
 		<Unit filename="libopeninv/include/canmap.h" />
+		<Unit filename="libopeninv/include/cansdo.h" />
 		<Unit filename="libopeninv/include/crc8.h" />
 		<Unit filename="libopeninv/include/delay.h" />
 		<Unit filename="libopeninv/include/digio.h" />
@@ -70,6 +72,7 @@
 		<Unit filename="libopeninv/src/anain.cpp" />
 		<Unit filename="libopeninv/src/canhardware.cpp" />
 		<Unit filename="libopeninv/src/canmap.cpp" />
+		<Unit filename="libopeninv/src/cansdo.cpp" />
 		<Unit filename="libopeninv/src/crc8.cpp" />
 		<Unit filename="libopeninv/src/digio.cpp" />
 		<Unit filename="libopeninv/src/errormessage.cpp" />

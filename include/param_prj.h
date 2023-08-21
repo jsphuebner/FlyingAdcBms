@@ -47,7 +47,7 @@
    3. Display values
  */
 //Next param id (increase when adding new parameter!): 14
-//Next value Id: 2066
+//Next value Id: 2075
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
     PARAM_ENTRY(CAT_BMS,     gain,        "mV/dig",  1,      1000,   588,    3   ) \
@@ -80,6 +80,7 @@
     VALUE_ENTRY(version,     VERSTR, 2001 ) \
     VALUE_ENTRY(modaddr,     "",     2045 ) \
     VALUE_ENTRY(modnum,      "",     2046 ) \
+    VALUE_ENTRY(totalcells,  "",     2074 ) \
     VALUE_ENTRY(chargein,    "As",   2040 ) \
     VALUE_ENTRY(chargeout,   "As",   2041 ) \
     VALUE_ENTRY(soc,         "%",    2071 ) \
@@ -153,7 +154,7 @@
 
 
 /***** Enum String definitions *****/
-#define OPMODES      "0=Boot, 1=GetAddr, 2=SetAddr, 3=Init, 4=Run, 5=RunBalance"
+#define OPMODES      "0=Boot, 1=GetAddr, 2=SetAddr, 3=ReqInfo, 4=RecvInfo, 5=Init, 6=Run, 7=RunBalance"
 #define OFFON        "0=Off, 1=On"
 #define BAL          "0=None, 1=Discharge, 2=ChargePos, 3=ChargeNeg"
 #define IDCMODES     "0=Off, 1=AdcSingle, 2=AdcDifferential, 3=IsaCan"
