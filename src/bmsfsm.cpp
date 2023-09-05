@@ -22,13 +22,14 @@
 #include "my_math.h"
 #include "flyingadcbms.h"
 
-#define IS_FIRST_THRESH 1800
+#define IS_FIRST_THRESH       1800
 #define SDO_INDEX_PARAMS      0x2000
+#define MAIN_MSG_ID           0x12C
 
 BmsFsm::BmsFsm(CanMap* cm, CanSdo* cs)
    : canMap(cm), canSdo(cs), isMain(false), infoIndex(1), numModules(1), cycles(0)
 {
-   cm->GetHardware()->AddReceiveCallback(this);
+   cm->GetHardware()->AddCallback(this);
    HandleClear();
    recvAddr = Param::GetInt(Param::sdobase);
    ourAddr = recvAddr;
@@ -141,7 +142,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
 
 Param::PARAM_NUM BmsFsm::GetDataItem(Param::PARAM_NUM baseItem, int modNum)
 {
-   const int numberOfParametersPerModule = 3;
+   const int numberOfParametersPerModule = 4;
    if (modNum < 0) modNum = ourAddr - Param::GetInt(Param::sdobase);
 
    return (Param::PARAM_NUM)((int)baseItem + modNum * numberOfParametersPerModule);
@@ -173,10 +174,15 @@ bool BmsFsm::IsFirst()
 void BmsFsm::MapCanSubmodule()
 {
    int id = Param::GetInt(Param::pdobase) + ourAddr - Param::GetInt(Param::sdobase);
-   canMap->AddSend(Param::umin, id, 0, 16, 1);
-   canMap->AddSend(Param::umax, id, 16, 16, 1);
-   canMap->AddSend(Param::uavg, id, 32, 16, 1);
-   canMap->AddSend(Param::temp, id, 56, 8, 1, 40);
+   canMap->AddSend(Param::umin0, id, 0, 13, 1);
+   canMap->AddSend(Param::umax0, id, 16, 13, 1);
+   canMap->AddSend(Param::counter, id, 30, 2, 1);
+   canMap->AddSend(Param::uavg0, id, 32, 13, 1);
+   canMap->AddSend(Param::temp0, id, 48, 8, 1, 40); //TODO: send here tempmin and tempmax
+   canMap->AddSend(Param::temp0, id, 56, 8, 1, 40);
+
+   canMap->AddRecv(Param::idc, MAIN_MSG_ID, 32, 16, 1); //will convert to signed in code
+   canMap->AddRecv(Param::uavg, Param::GetInt(Param::pdobase), 32, 16, 1);
 }
 
 void BmsFsm::MapCanMainmodule()
@@ -184,16 +190,26 @@ void BmsFsm::MapCanMainmodule()
    for (int i = 1; i < GetMaxSubmodules(); i++)
    {
       int id = Param::GetInt(Param::pdobase) + i;
-      canMap->AddRecv(GetDataItem(Param::umin0, i), id, 0, 16, 1);
-      canMap->AddRecv(GetDataItem(Param::umax0, i), id, 16, 16, 1);
-      canMap->AddRecv(GetDataItem(Param::uavg0, i), id, 32, 16, 1);
+      canMap->AddRecv(GetDataItem(Param::umin0, i), id, 0, 13, 1);
+      canMap->AddRecv(GetDataItem(Param::umax0, i), id, 16, 13, 1);
+      canMap->AddRecv(GetDataItem(Param::uavg0, i), id, 32, 13, 1);
+      canMap->AddRecv(GetDataItem(Param::temp0, i), id, 48, 8, 1, -40);
    }
 
-   MapCanSubmodule(); //we're doing these as well, just they're accumulated from all modules
+   int id = Param::GetInt(Param::pdobase);
 
-   canMap->AddSend(Param::chargelim, 300, 0, 10, 1);
-   canMap->AddSend(Param::dischargelim, 300, 10, 10, 1);
-   canMap->AddSend(Param::soc, 300, 20, 10, 4);
-   canMap->AddSend(Param::idcavg, 300, 40, 12, 1);
-   canMap->AddSend(Param::utotal, 300, 52, 10, 0.001);
+   //we don't expose our local accumulated values but the "global" ones
+   canMap->AddSend(Param::umin, id, 0, 13, 1);
+   canMap->AddSend(Param::umax, id, 16, 13, 1);
+   canMap->AddSend(Param::counter, id, 30, 2, 1);
+   canMap->AddSend(Param::uavg, id, 32, 13, 1);
+   canMap->AddSend(Param::tempmin, id, 48, 8, 1, 40);
+   canMap->AddSend(Param::tempmax, id, 56, 8, 1, 40);
+
+   canMap->AddSend(Param::chargelim, MAIN_MSG_ID, 0, 11, 1);
+   canMap->AddSend(Param::dischargelim, MAIN_MSG_ID, 11, 11, 1);
+   canMap->AddSend(Param::soc, MAIN_MSG_ID, 22, 10, 10);
+   canMap->AddSend(Param::idcavg, MAIN_MSG_ID, 32, 16, 10);
+   canMap->AddSend(Param::utotal, MAIN_MSG_ID, 48, 10, 0.001f);
+   canMap->AddSend(Param::counter, MAIN_MSG_ID, 62, 2, 1);
 }

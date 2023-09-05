@@ -18,7 +18,6 @@
  */
 #include <stdint.h>
 #include <libopencm3/stm32/usart.h>
-#include <libopencm3/stm32/spi.h>
 #include <libopencm3/stm32/rtc.h>
 #include <libopencm3/stm32/can.h>
 #include <libopencm3/stm32/iwdg.h>
@@ -43,11 +42,11 @@
 #include "temp_meas.h"
 
 #define PRINT_JSON 0
+#define NO_TEMP    128
 
 static Stm32Scheduler* scheduler;
 static CanMap* canMap;
 static BmsFsm* bmsFsm;
-static bool currentSensorOn = false;
 
 static void Accumulate(float sum, float min, float max, float avg)
 {
@@ -61,23 +60,41 @@ static void Accumulate(float sum, float min, float max, float avg)
       //If we are the first module accumulate our values with those from the sub modules
       for (int i = 1; i < bmsFsm->GetNumberOfModules(); i++)
       {
-         totalSum += Param::GetFloat(bmsFsm->GetDataItem(Param::uavg0, i)) * 16; //TODO use actual number of cells per module
+         //Here we undo the local average calculation on the module to calculate the substrings total voltage
+         totalSum += Param::GetFloat(bmsFsm->GetDataItem(Param::uavg0, i)) * bmsFsm->GetCellsOfModule(i);
          totalMin = MIN(totalMin, Param::GetFloat(bmsFsm->GetDataItem(Param::umin0, i)));
-         totalMax = MIN(totalMax, Param::GetFloat(bmsFsm->GetDataItem(Param::umax0, i)));
+         totalMax = MAX(totalMax, Param::GetFloat(bmsFsm->GetDataItem(Param::umax0, i)));
       }
+
+      float tempmin = NO_TEMP, tempmax = -40;
+
+      for (int i = 0; i < bmsFsm->GetNumberOfModules(); i++)
+      {
+         float temp = Param::GetFloat(bmsFsm->GetDataItem(Param::temp0, i));
+
+         if (temp < NO_TEMP)
+         {
+            tempmin = MIN(tempmin, temp);
+            tempmax = MAX(tempmin, temp);
+         }
+      }
+
       Param::SetFloat(Param::umin, totalMin);
       Param::SetFloat(Param::umax, totalMax);
-      Param::SetFloat(Param::uavg, totalSum / (bmsFsm->GetNumberOfModules() * 16));
+      Param::SetFloat(Param::uavg, totalSum / Param::GetInt(Param::totalcells));
       Param::SetFloat(Param::udelta, totalMax - totalMin);
       Param::SetFloat(Param::utotal, totalSum);
+      Param::SetFloat(Param::tempmin, tempmin);
+      Param::SetFloat(Param::tempmax, tempmax);
    }
    else //if we are a sub module write averages straight to data module
    {
       Param::SetFloat(Param::utotal, sum);
-      Param::SetFloat(Param::uavg, avg);
-      Param::SetFloat(Param::umin, min);
-      Param::SetFloat(Param::umax, max);
+      Param::SetFloat(Param::uavg0, avg);
+      Param::SetFloat(Param::umin0, min);
+      Param::SetFloat(Param::umax0, max);
       Param::SetFloat(Param::udelta, max - min);
+      Param::SetFloat(Param::idcavg, ((float)(int16_t)Param::GetInt(Param::idc)) / 10);
    }
 }
 
@@ -114,12 +131,13 @@ static void ReadAdc()
       if (balanceCycles > 0 && balanceCycles < (totalBalanceCycles - 1))
       {
          float udc = Param::GetFloat((Param::PARAM_NUM)(Param::u0 + chan));
+         float packAvg = Param::GetFloat(Param::uavg);
 
-         if (udc < (avg - 3))
+         if (udc < (packAvg - 3))
          {
             bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_CHARGE);
          }
-         else if (udc > (avg + 1))
+         else if (udc > (packAvg + 1))
          {
             bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_DISCHARGE);
          }
@@ -197,9 +215,9 @@ static void Ms100Task(void)
    int sensor = Param::GetInt(Param::tempsns);
 
    if (sensor >= 0)
-      Param::SetFloat(Param::temp, TempMeas::Lookup(AnaIn::temp2.Get(), (TempMeas::Sensors)sensor));
+      Param::SetFloat(Param::temp0, TempMeas::Lookup(AnaIn::temp2.Get(), (TempMeas::Sensors)sensor));
    else
-      Param::SetInt(Param::temp, 255);
+      Param::SetInt(Param::temp0, NO_TEMP);
 
    BmsFsm::bmsstate stt = bmsFsm->Run((BmsFsm::bmsstate)Param::GetInt(Param::opmode));
 
@@ -221,11 +239,13 @@ static void Ms100Task(void)
    }
 
    Param::SetInt(Param::opmode, stt);
+   //4 bit circular counter for alive indication
+   Param::SetInt(Param::counter, (Param::GetInt(Param::counter) + 1) & 0xF);
 
    canMap->SendAll();
 }
 
-//sample 10 ms task
+/** \brief This task runs the BMS voltage sensing */
 static void Ms25Task(void)
 {
    int opmode = Param::GetInt(Param::opmode);
@@ -243,13 +263,10 @@ static void Ms25Task(void)
 static void MeasureCurrent()
 {
    int idcmode = Param::GetInt(Param::idcmode);
-   //s32fp voltage = Param::Get(Param::udc);
-   float current = 0;
-
-   //if (rtc_get_counter_val() < 2) return; //Discard the first few current samples
 
    if (idcmode == IDC_DIFFERENTIAL || idcmode == IDC_SINGLE)
    {
+      float current = 0;
       static int samples = 0;
       static u32fp amsIn = 0, amsOut = 0;
       static float idcavg = 0;
@@ -282,10 +299,11 @@ static void MeasureCurrent()
          chargeout += amsOut / 100;
          idcavg /= 100;
 
-         //s32fp power = FP_MUL(voltage, idcavg);
+         float voltage = Param::GetFloat(Param::utotal) / 1000;
+         float power = voltage * idcavg;
 
          Param::SetFloat(Param::idcavg, idcavg);
-         //Param::SetFlt(Param::power, power);
+         Param::SetFloat(Param::power, power);
 
          amsIn = 0;
          amsOut = 0;
@@ -296,15 +314,8 @@ static void MeasureCurrent()
          Param::SetFixed(Param::chargein, chargein);
          Param::SetFixed(Param::chargeout, chargeout);
       }
+      Param::SetFloat(Param::idc, current);
    }
-   else //Isa Shunt
-   {
-      //current = FP_FROMINT(IsaShunt::GetCurrent()) / 1000;
-      //s32fp power = FP_MUL(voltage, current);
-      //Param::SetFlt(Param::power, power);
-   }
-
-   Param::SetFloat(Param::idc, current);
 }
 
 /** This function is called when the user changes a parameter */
@@ -313,12 +324,6 @@ void Param::Change(Param::PARAM_NUM paramNum)
    switch (paramNum)
    {
    default:
-      if (!currentSensorOn && Param::GetInt(Param::idcmode) > 0)
-      {
-         scheduler->AddTask(MeasureCurrent, 10);
-         currentSensorOn = true;
-      }
-
       BmsAlgo::SetNominalCapacity(Param::GetFloat(Param::nomcap));
 
       for (int i = 0; i < 10; i++)
@@ -358,16 +363,15 @@ extern "C" int main(void)
    CanSdo sdo(&c, &cm);
 
    BmsFsm fsm(&cm, &sdo);
-   c.AddReceiveCallback(&fsm);
+   c.AddCallback(&fsm);
    bmsFsm = &fsm;
 
    TerminalCommands::SetCanMap(canMap);
 
+   s.AddTask(MeasureCurrent, 10);
    s.AddTask(Ms25Task, 25);
    s.AddTask(Ms100Task, 100);
 
-   //backward compatibility, version 4 was the first to support the "stream" command
-   Param::SetInt(Param::version, 4);
    Param::Change(Param::PARAM_LAST); //Call callback one for general parameter propagation
 
    DigIo::selfena_out.Set();

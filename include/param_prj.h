@@ -39,7 +39,7 @@
  */
 
  //Define a version string of your firmware here
-#define VER 0.05.B
+#define VER 0.10.B
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
@@ -47,7 +47,7 @@
    3. Display values
  */
 //Next param id (increase when adding new parameter!): 14
-//Next value Id: 2075
+//Next value Id: 2086
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
     PARAM_ENTRY(CAT_BMS,     gain,        "mV/dig",  1,      1000,   588,    3   ) \
@@ -81,6 +81,7 @@
     VALUE_ENTRY(modaddr,     "",     2045 ) \
     VALUE_ENTRY(modnum,      "",     2046 ) \
     VALUE_ENTRY(totalcells,  "",     2074 ) \
+    VALUE_ENTRY(counter,     "",     2076 ) \
     VALUE_ENTRY(chargein,    "As",   2040 ) \
     VALUE_ENTRY(chargeout,   "As",   2041 ) \
     VALUE_ENTRY(soc,         "%",    2071 ) \
@@ -88,34 +89,12 @@
     VALUE_ENTRY(dischargelim,"A",    2073 ) \
     VALUE_ENTRY(idc,         "A",    2042 ) \
     VALUE_ENTRY(idcavg,      "A",    2043 ) \
-    VALUE_ENTRY(temp,        "°C",   2044 ) \
+    VALUE_ENTRY(power,       "W",    2075 ) \
+    VALUE_ENTRY(tempmin,     "°C",   2044 ) \
+    VALUE_ENTRY(tempmax,     "°C",   2077 ) \
     VALUE_ENTRY(uavg,        "mV",   2002 ) \
     VALUE_ENTRY(umin,        "mV",   2003 ) \
     VALUE_ENTRY(umax,        "mV",   2004 ) \
-    VALUE_ENTRY(uavg0,       "mV",   2047 ) \
-    VALUE_ENTRY(umin0,       "mV",   2048 ) \
-    VALUE_ENTRY(umax0,       "mV",   2049 ) \
-    VALUE_ENTRY(uavg1,       "mV",   2050 ) \
-    VALUE_ENTRY(umin1,       "mV",   2051 ) \
-    VALUE_ENTRY(umax1,       "mV",   2052 ) \
-    VALUE_ENTRY(uavg2,       "mV",   2053 ) \
-    VALUE_ENTRY(umin2,       "mV",   2054 ) \
-    VALUE_ENTRY(umax2,       "mV",   2055 ) \
-    VALUE_ENTRY(uavg3,       "mV",   2056 ) \
-    VALUE_ENTRY(umin3,       "mV",   2057 ) \
-    VALUE_ENTRY(umax3,       "mV",   2058 ) \
-    VALUE_ENTRY(uavg4,       "mV",   2059 ) \
-    VALUE_ENTRY(umin4,       "mV",   2060 ) \
-    VALUE_ENTRY(umax4,       "mV",   2061 ) \
-    VALUE_ENTRY(uavg5,       "mV",   2062 ) \
-    VALUE_ENTRY(umin5,       "mV",   2063 ) \
-    VALUE_ENTRY(umax5,       "mV",   2064 ) \
-    VALUE_ENTRY(uavg6,       "mV",   2065 ) \
-    VALUE_ENTRY(umin6,       "mV",   2066 ) \
-    VALUE_ENTRY(umax6,       "mV",   2067 ) \
-    VALUE_ENTRY(uavg7,       "mV",   2068 ) \
-    VALUE_ENTRY(umin7,       "mV",   2069 ) \
-    VALUE_ENTRY(umax7,       "mV",   2070 ) \
     VALUE_ENTRY(udelta,      "mV",   2005 ) \
     VALUE_ENTRY(utotal,      "mV",   2039 ) \
     VALUE_ENTRY(u0,          "mV",   2006 ) \
@@ -134,6 +113,38 @@
     VALUE_ENTRY(u13,         "mV",   2019 ) \
     VALUE_ENTRY(u14,         "mV",   2020 ) \
     VALUE_ENTRY(u15,         "mV",   2021 ) \
+    VALUE_ENTRY(uavg0,       "mV",   2047 ) \
+    VALUE_ENTRY(umin0,       "mV",   2048 ) \
+    VALUE_ENTRY(umax0,       "mV",   2049 ) \
+    VALUE_ENTRY(temp0,       "°C",   2078 ) \
+    VALUE_ENTRY(uavg1,       "mV",   2050 ) \
+    VALUE_ENTRY(umin1,       "mV",   2051 ) \
+    VALUE_ENTRY(umax1,       "mV",   2052 ) \
+    VALUE_ENTRY(temp1,       "°C",   2079 ) \
+    VALUE_ENTRY(uavg2,       "mV",   2053 ) \
+    VALUE_ENTRY(umin2,       "mV",   2054 ) \
+    VALUE_ENTRY(umax2,       "mV",   2055 ) \
+    VALUE_ENTRY(temp2,       "°C",   2080 ) \
+    VALUE_ENTRY(uavg3,       "mV",   2056 ) \
+    VALUE_ENTRY(umin3,       "mV",   2057 ) \
+    VALUE_ENTRY(umax3,       "mV",   2058 ) \
+    VALUE_ENTRY(temp3,       "°C",   2081 ) \
+    VALUE_ENTRY(uavg4,       "mV",   2059 ) \
+    VALUE_ENTRY(umin4,       "mV",   2060 ) \
+    VALUE_ENTRY(umax4,       "mV",   2061 ) \
+    VALUE_ENTRY(temp4,       "°C",   2082 ) \
+    VALUE_ENTRY(uavg5,       "mV",   2062 ) \
+    VALUE_ENTRY(umin5,       "mV",   2063 ) \
+    VALUE_ENTRY(umax5,       "mV",   2064 ) \
+    VALUE_ENTRY(temp5,       "°C",   2083 ) \
+    VALUE_ENTRY(uavg6,       "mV",   2065 ) \
+    VALUE_ENTRY(umin6,       "mV",   2066 ) \
+    VALUE_ENTRY(umax6,       "mV",   2067 ) \
+    VALUE_ENTRY(temp6,       "°C",   2084 ) \
+    VALUE_ENTRY(uavg7,       "mV",   2068 ) \
+    VALUE_ENTRY(umin7,       "mV",   2069 ) \
+    VALUE_ENTRY(umax7,       "mV",   2070 ) \
+    VALUE_ENTRY(temp7,       "°C",   2085 ) \
     VALUE_ENTRY(u0cmd,       BAL,    2022 ) \
     VALUE_ENTRY(u1cmd,       BAL,    2023 ) \
     VALUE_ENTRY(u2cmd,       BAL,    2024 ) \
@@ -165,7 +176,7 @@
 #define CAT_COMM     "Communication"
 #define CAT_BAT      "Battery Characteristics"
 
-#define VERSTR STRINGIFY(4=VER)
+#define VERSTR STRINGIFY(0=VER)
 
 /***** enums ******/
 

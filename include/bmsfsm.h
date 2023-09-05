@@ -33,6 +33,7 @@ class BmsFsm: public CanCallback
       BmsFsm(CanMap* cm, CanSdo* cs);
       bmsstate Run(bmsstate currentState);
       int GetNumberOfModules() { return numModules; }
+      uint8_t GetCellsOfModule(uint8_t mod) { return numChan[mod]; }
       Param::PARAM_NUM GetDataItem(Param::PARAM_NUM baseItem, int modNum = -1);
       bool HandleRx(uint32_t canId, uint32_t data[2]);
       void HandleClear();
