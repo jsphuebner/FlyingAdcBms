@@ -46,7 +46,7 @@
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 31
+//Next param id (increase when adding new parameter!): 33
 //Next value Id: 2086
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
@@ -58,9 +58,11 @@
     PARAM_ENTRY(CAT_BMS,     balmode,     BALMODE,   0,      3,      0,      5   ) \
     PARAM_ENTRY(CAT_BMS,     ubalance,    "mV",      0,      4500,   4500,   30  ) \
     PARAM_ENTRY(CAT_BMS,     idlewait,    "s",       0,      100000, 60,     12  ) \
+    PARAM_ENTRY(CAT_LIM,     ucellmin,    "mV",      1000,   4500,   3300,   28  ) \
+    PARAM_ENTRY(CAT_LIM,     ucellmax,    "mV",      1000,   4500,   4200,   29  ) \
+    PARAM_ENTRY(CAT_LIM,     chargemax,   "A",       1,      2047,   200,    31  ) \
+    PARAM_ENTRY(CAT_LIM,     dischargemax,"A",       1,      2047,   200,    32  ) \
     PARAM_ENTRY(CAT_BAT,     nomcap,      "Ah",      0,      1000,   100,    9   ) \
-    PARAM_ENTRY(CAT_BAT,     ucellmin,    "mV",      1000,   4500,   3300,   28  ) \
-    PARAM_ENTRY(CAT_BAT,     ucellmax,    "mV",      1000,   4500,   4200,   29  ) \
     PARAM_ENTRY(CAT_BAT,     ucell0soc,   "mV",      2000,   4500,   3300,   17  ) \
     PARAM_ENTRY(CAT_BAT,     ucell10soc,  "mV",      2000,   4500,   3400,   18  ) \
     PARAM_ENTRY(CAT_BAT,     ucell20soc,  "mV",      2000,   4500,   3450,   19  ) \
@@ -72,7 +74,7 @@
     PARAM_ENTRY(CAT_BAT,     ucell80soc,  "mV",      2000,   4500,   4000,   25  ) \
     PARAM_ENTRY(CAT_BAT,     ucell90soc,  "mV",      2000,   4500,   4100,   26  ) \
     PARAM_ENTRY(CAT_BAT,     ucell100soc, "mV",      2000,   4500,   4200,   27  ) \
-    PARAM_ENTRY(CAT_SENS,    idcgain,     "dig/A",   -1000,  1000,   10,     6   ) \
+    PARAM_ENTRY(CAT_SENS,    idcgain,     "dig/A",  -1000,   1000,   10,     6   ) \
     PARAM_ENTRY(CAT_SENS,    idcofs,      "dig",    -4095,   4095,   0,      7   ) \
     PARAM_ENTRY(CAT_SENS,    idcmode,     IDCMODES,  0,      3,      0,      8   ) \
     PARAM_ENTRY(CAT_SENS,    tempsns,     TEMPSNS,   -1,     3,      -1,     13  ) \
@@ -170,7 +172,7 @@
 /***** Enum String definitions *****/
 #define OPMODES      "0=Boot, 1=GetAddr, 2=SetAddr, 3=ReqInfo, 4=RecvInfo, 5=Init, 6=Run, 7=RunBalance"
 #define OFFON        "0=Off, 1=On"
-#define BALMODE      "0=Off, 1=Addititve, 2=Dissipative, 3=Both"
+#define BALMODE      "0=Off, 1=Additive, 2=Dissipative, 3=Both"
 #define BAL          "0=None, 1=Discharge, 2=ChargePos, 3=ChargeNeg"
 #define IDCMODES     "0=Off, 1=AdcSingle, 2=AdcDifferential, 3=IsaCan"
 #define TEMPSNS      "-1=Off, 0=JCurve, 1=KTY81, 2=PT1000, 3=Leaf"
@@ -179,8 +181,9 @@
 #define CAT_SENS     "Sensor setup"
 #define CAT_COMM     "Communication"
 #define CAT_BAT      "Battery Characteristics"
+#define CAT_LIM      "Battery Limits"
 
-#define VERSTR STRINGIFY(0=VER)
+#define VERSTR STRINGIFY(4=VER)
 
 /***** enums ******/
 

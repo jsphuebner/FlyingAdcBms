@@ -100,11 +100,11 @@ static void Accumulate(float sum, float min, float max, float avg)
 
 static void CalculateCurrentLimits()
 {
-   float chargeCurrentLimit = BmsAlgo::GetChargeCurrent(Param::GetFloat(Param::soc));
+   float chargeCurrentLimit = BmsAlgo::GetChargeCurrent(Param::GetFloat(Param::soc), Param::GetFloat(Param::chargemax));
    chargeCurrentLimit *= BmsAlgo::LimitMaximumCellVoltage(Param::GetFloat(Param::umax), Param::GetFloat(Param::ucellmax));
    Param::SetFloat(Param::chargelim, chargeCurrentLimit);
 
-   float dischargeCurrentLimit = 500;
+   float dischargeCurrentLimit = Param::GetFloat(Param::dischargemax);
    dischargeCurrentLimit *= BmsAlgo::LimitMinumumCellVoltage(Param::GetFloat(Param::umin), Param::GetFloat(Param::ucellmin));
    Param::SetFloat(Param::dischargelim, dischargeCurrentLimit);
 }
@@ -373,6 +373,7 @@ extern "C" int main(void)
    s.AddTask(Ms25Task, 25);
    s.AddTask(Ms100Task, 100);
 
+   Param::SetInt(Param::version, 4);
    Param::Change(Param::PARAM_LAST); //Call callback one for general parameter propagation
 
    DigIo::selfena_out.Set();

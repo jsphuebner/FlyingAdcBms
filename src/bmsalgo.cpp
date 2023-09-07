@@ -22,8 +22,8 @@
 float BmsAlgo::nominalCapacity;
 //voltage to state of charge                0%    10%   20%   30%   40%   50%   60%   70%   80%   90%   100%
 uint16_t BmsAlgo::voltageToSoc[] =       { 3300, 3400, 3450, 3500, 3560, 3600, 3700, 3800, 4000, 4100, 4200 };
-//state of charge to charge current
-uint16_t BmsAlgo::socToChargeCurrent[] = { 200,  200,  200,  200,  200,   125,  100, 80,   60,   25,   0 };
+//state of charge to normalized charge current
+const float BmsAlgo::socToChargeCurrent[] = { 1.0f,  1.0f, 1.0f, 1.0f, 1.0f, 0.625f,0.5f,0.4f, 0.3f,0.125f,  0 };
 
 float BmsAlgo::CalculateSocFromIntegration(float lastSoc, float asDiff)
 {
@@ -52,20 +52,21 @@ float BmsAlgo::EstimateSocFromVoltage(float lowestVoltage)
    return 100;
 }
 
-float BmsAlgo::GetChargeCurrent(float soc)
+float BmsAlgo::GetChargeCurrent(float soc, float maxCurrent)
 {
    if (soc < 0) return socToChargeCurrent[0];
    if (soc > 100) return 0;
 
-   //Interpolate between two currents. Say soc=44%, current@40%=200, current@50%=125
-   //then power = 125 + (10 - 44 % 10) * (200 - 125) / 10
+   //Interpolate between two normalized currents. Say soc=44%, current@40%=1.0, current@50%=0.625
+   //then current = 0.625 + (10 - 44 % 10) * (1 - 0.625) / 10
 
    int i = soc / 10;
    float lutDiff = socToChargeCurrent[i] - socToChargeCurrent[i + 1];
    float valDiff = 10 - (10 - (soc - i * 10));
-   float power = socToChargeCurrent[i] - valDiff * lutDiff / 10;
+   float current = socToChargeCurrent[i] - valDiff * lutDiff / 10;
+   current *= maxCurrent;
 
-   return power;
+   return current;
 }
 
 float BmsAlgo::LimitMinumumCellVoltage(float minVoltage, float limit)

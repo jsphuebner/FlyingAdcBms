@@ -26,7 +26,7 @@ class BmsAlgo
    public:
       static float EstimateSocFromVoltage(float lowestVoltage);
       static float CalculateSocFromIntegration(float lastSoc, float asDiff);
-      static float GetChargeCurrent(float soc);
+      static float GetChargeCurrent(float soc, float maxCurrent);
       static float LimitMaximumCellVoltage(float maxVoltage, float limit);
       static float LimitMinumumCellVoltage(float minVoltage, float limit);
       static void SetNominalCapacity(float c) { nominalCapacity = c; }
@@ -35,7 +35,7 @@ class BmsAlgo
    private:
       static float nominalCapacity;
       static uint16_t voltageToSoc[11];
-      static uint16_t socToChargeCurrent[11];
+      static const float socToChargeCurrent[11];
 };
 
 #endif // BMSALGO_H
