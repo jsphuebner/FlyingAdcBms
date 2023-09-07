@@ -39,14 +39,14 @@
  */
 
  //Define a version string of your firmware here
-#define VER 0.10.B
+#define VER 0.11.B
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 14
+//Next param id (increase when adding new parameter!): 31
 //Next value Id: 2086
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
@@ -55,9 +55,12 @@
     PARAM_ENTRY(CAT_BMS,     correction1, "ppm",     -10000, 10000,  1500,   15  ) \
     PARAM_ENTRY(CAT_BMS,     correction15,"ppm",     -10000, 10000,  1000,   16  ) \
     PARAM_ENTRY(CAT_BMS,     numchan,     "",        1,      16,     16,     4   ) \
-    PARAM_ENTRY(CAT_BMS,     balance,     OFFON,     0,      1,      0,      5   ) \
+    PARAM_ENTRY(CAT_BMS,     balmode,     BALMODE,   0,      3,      0,      5   ) \
+    PARAM_ENTRY(CAT_BMS,     ubalance,    "mV",      0,      4500,   4500,   30  ) \
     PARAM_ENTRY(CAT_BMS,     idlewait,    "s",       0,      100000, 60,     12  ) \
-    PARAM_ENTRY(CAT_BMS,     nomcap,      "Ah",      0,      1000,   100,    9   ) \
+    PARAM_ENTRY(CAT_BAT,     nomcap,      "Ah",      0,      1000,   100,    9   ) \
+    PARAM_ENTRY(CAT_BAT,     ucellmin,    "mV",      1000,   4500,   3300,   28  ) \
+    PARAM_ENTRY(CAT_BAT,     ucellmax,    "mV",      1000,   4500,   4200,   29  ) \
     PARAM_ENTRY(CAT_BAT,     ucell0soc,   "mV",      2000,   4500,   3300,   17  ) \
     PARAM_ENTRY(CAT_BAT,     ucell10soc,  "mV",      2000,   4500,   3400,   18  ) \
     PARAM_ENTRY(CAT_BAT,     ucell20soc,  "mV",      2000,   4500,   3450,   19  ) \
@@ -167,6 +170,7 @@
 /***** Enum String definitions *****/
 #define OPMODES      "0=Boot, 1=GetAddr, 2=SetAddr, 3=ReqInfo, 4=RecvInfo, 5=Init, 6=Run, 7=RunBalance"
 #define OFFON        "0=Off, 1=On"
+#define BALMODE      "0=Off, 1=Addititve, 2=Dissipative, 3=Both"
 #define BAL          "0=None, 1=Discharge, 2=ChargePos, 3=ChargeNeg"
 #define IDCMODES     "0=Off, 1=AdcSingle, 2=AdcDifferential, 3=IsaCan"
 #define TEMPSNS      "-1=Off, 0=JCurve, 1=KTY81, 2=PT1000, 3=Leaf"
@@ -192,12 +196,14 @@ enum _canspeeds
    CAN_PERIOD_LAST
 };
 
-enum _modes
+enum _balmode
 {
-   MOD_OFF = 0,
-   MOD_RUN,
-   MOD_LAST
+   BAL_OFF = 0,
+   BAL_ADD = 1,
+   BAL_DIS = 2,
+   BAL_BOTH = 3
 };
+
 
 //Generated enum-string for possible errors
 extern const char* errorListString;

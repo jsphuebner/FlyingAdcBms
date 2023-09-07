@@ -101,11 +101,11 @@ static void Accumulate(float sum, float min, float max, float avg)
 static void CalculateCurrentLimits()
 {
    float chargeCurrentLimit = BmsAlgo::GetChargeCurrent(Param::GetFloat(Param::soc));
-   chargeCurrentLimit *= BmsAlgo::LimitMaximumCellVoltage(Param::GetFloat(Param::umax));
+   chargeCurrentLimit *= BmsAlgo::LimitMaximumCellVoltage(Param::GetFloat(Param::umax), Param::GetFloat(Param::ucellmax));
    Param::SetFloat(Param::chargelim, chargeCurrentLimit);
 
    float dischargeCurrentLimit = 500;
-   dischargeCurrentLimit *= BmsAlgo::LimitMinumumCellVoltage(Param::GetFloat(Param::umin));
+   dischargeCurrentLimit *= BmsAlgo::LimitMinumumCellVoltage(Param::GetFloat(Param::umin), Param::GetFloat(Param::ucellmin));
    Param::SetFloat(Param::dischargelim, dischargeCurrentLimit);
 }
 
@@ -114,7 +114,8 @@ static void ReadAdc()
    int totalBalanceCycles = 30;
    static uint8_t chan = 0, balanceCycles = 0;
    static float sum = 0, min, max, avg;
-   bool balance = Param::GetBool(Param::balance);
+   bool balance = Param::GetInt(Param::opmode) == BmsFsm::RUNBALANCE && Param::GetFloat(Param::uavg) > Param::GetFloat(Param::ubalance);
+   int balMode = Param::GetInt(Param::balmode);
    FlyingAdcBms::BalanceStatus bstt;
 
    if (balance)
@@ -133,11 +134,11 @@ static void ReadAdc()
          float udc = Param::GetFloat((Param::PARAM_NUM)(Param::u0 + chan));
          float packAvg = Param::GetFloat(Param::uavg);
 
-         if (udc < (packAvg - 3))
+         if (udc < (packAvg - 3) && (balMode & BAL_ADD))
          {
             bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_CHARGE);
          }
-         else if (udc > (packAvg + 1))
+         else if (udc > (packAvg + 1) && (balMode & BAL_DIS))
          {
             bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_DISCHARGE);
          }

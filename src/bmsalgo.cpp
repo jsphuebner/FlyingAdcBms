@@ -68,9 +68,9 @@ float BmsAlgo::GetChargeCurrent(float soc)
    return power;
 }
 
-float BmsAlgo::LimitMinumumCellVoltage(float minVoltage)
+float BmsAlgo::LimitMinumumCellVoltage(float minVoltage, float limit)
 {
-   float factor = (minVoltage - 3000) / 50; //start limiting 50mV before hitting 3V
+   float factor = (minVoltage - limit) / 50; //start limiting 50mV before hitting minimum
    factor = MAX(0, factor);
    factor = MIN(1, factor);
    return factor;
@@ -82,9 +82,9 @@ float BmsAlgo::LimitMinumumCellVoltage(float minVoltage)
  * \return float derating factor
  *
  */
-float BmsAlgo::LimitMaximumCellVoltage(float maxVoltage)
+float BmsAlgo::LimitMaximumCellVoltage(float maxVoltage, float limit)
 {
-   float factor = (4200 - maxVoltage) / 10; //start limiting 10mV before hitting 4.2V
+   float factor = (limit - maxVoltage) / 10; //start limiting 10mV before hitting maximum
    factor = MAX(0, factor);
    factor = MIN(1, factor);
    return factor;

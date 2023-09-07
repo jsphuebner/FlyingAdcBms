@@ -108,7 +108,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
       FlyingAdcBms::Init();
       return RUN;
    case RUN:
-      if (IsFirst() && ABS(Param::GetFloat(Param::idcavg)) < 0.8f)
+      if (ABS(Param::GetFloat(Param::idcavg)) < 0.8f)
       {
          cycles++;
 
@@ -131,7 +131,8 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
          return RUN;
       }
 
-      if (cycles > ((uint32_t)Param::GetInt(Param::idlewait) * 20))
+      //After 2 hours turn off
+      if (cycles > 72000)
       {
          DigIo::selfena_out.Clear();
       }

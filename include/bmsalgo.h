@@ -27,8 +27,8 @@ class BmsAlgo
       static float EstimateSocFromVoltage(float lowestVoltage);
       static float CalculateSocFromIntegration(float lastSoc, float asDiff);
       static float GetChargeCurrent(float soc);
-      static float LimitMaximumCellVoltage(float maxVoltage);
-      static float LimitMinumumCellVoltage(float minVoltage);
+      static float LimitMaximumCellVoltage(float maxVoltage, float limit);
+      static float LimitMinumumCellVoltage(float minVoltage, float limit);
       static void SetNominalCapacity(float c) { nominalCapacity = c; }
       static void SetSocLookupPoint(uint8_t soc, uint16_t voltage);
 
