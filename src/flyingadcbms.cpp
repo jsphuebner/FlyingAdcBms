@@ -188,6 +188,7 @@ static void BitBangI2CStop()
    DigIo::i2c_scl.Set();
    for (volatile int i = 0; i < I2C_DELAY; i++);
    DigIo::i2c_do.Set(); //data high -> STOP
+   for (volatile int i = 0; i < I2C_DELAY; i++);
 }
 
 static void SendRecvI2COverSPI(uint8_t address, bool read, uint8_t* data, uint8_t len)

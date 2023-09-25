@@ -385,7 +385,6 @@ extern "C" int main(void)
       if (sdo.GetPrintRequest() == PRINT_JSON)
       {
          TerminalCommands::PrintParamsJson(&sdo, &c);
-         sdo.SignalPrintComplete();
       }
    }
 
