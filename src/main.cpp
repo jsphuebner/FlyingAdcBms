@@ -327,8 +327,11 @@ void Param::Change(Param::PARAM_NUM paramNum)
    default:
       BmsAlgo::SetNominalCapacity(Param::GetFloat(Param::nomcap));
 
-      for (int i = 0; i < 10; i++)
+      for (int i = 0; i < 11; i++)
+      {
          BmsAlgo::SetSocLookupPoint(i * 10, Param::GetInt((Param::PARAM_NUM)(Param::ucell0soc + i)));
+         BmsAlgo::SetChargeLimit(i * 10, Param::GetFloat((Param::PARAM_NUM)(Param::charge0soc + i)) / 100.0f);
+      }
 
       break;
    }
@@ -374,7 +377,7 @@ extern "C" int main(void)
    s.AddTask(Ms100Task, 100);
 
    Param::SetInt(Param::version, 4);
-   Param::Change(Param::PARAM_LAST); //Call callback one for general parameter propagation
+   Param::Change(Param::PARAM_LAST); //Call callback once for general parameter propagation
 
    DigIo::selfena_out.Set();
 

@@ -31,11 +31,12 @@ class BmsAlgo
       static float LimitMinumumCellVoltage(float minVoltage, float limit);
       static void SetNominalCapacity(float c) { nominalCapacity = c; }
       static void SetSocLookupPoint(uint8_t soc, uint16_t voltage);
+      static void SetChargeLimit(uint8_t soc, float factor);
 
    private:
       static float nominalCapacity;
       static uint16_t voltageToSoc[11];
-      static const float socToChargeCurrent[11];
+      static float socToChargeCurrent[11];
 };
 
 #endif // BMSALGO_H

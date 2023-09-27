@@ -23,7 +23,7 @@ float BmsAlgo::nominalCapacity;
 //voltage to state of charge                0%    10%   20%   30%   40%   50%   60%   70%   80%   90%   100%
 uint16_t BmsAlgo::voltageToSoc[] =       { 3300, 3400, 3450, 3500, 3560, 3600, 3700, 3800, 4000, 4100, 4200 };
 //state of charge to normalized charge current
-const float BmsAlgo::socToChargeCurrent[] = { 1.0f,  1.0f, 1.0f, 1.0f, 1.0f, 0.625f,0.5f,0.4f, 0.3f,0.125f,  0 };
+float BmsAlgo::socToChargeCurrent[] = { 1.0f,  1.0f, 1.0f, 1.0f, 1.0f, 0.625f,0.5f,0.4f, 0.3f,0.125f,  0 };
 
 float BmsAlgo::CalculateSocFromIntegration(float lastSoc, float asDiff)
 {
@@ -101,4 +101,16 @@ void BmsAlgo::SetSocLookupPoint(uint8_t soc, uint16_t voltage)
 {
    if (soc > 100) return;
    voltageToSoc[soc / 10] = voltage;
+}
+
+/** \brief Sets a charge current limit at a given SoC
+ *
+ * \param soc soc at multiples of 10 up to 90%, so 0, 10, 20,...,90
+ * \param factor current derating factor
+ *
+ */
+void BmsAlgo::SetChargeLimit(uint8_t soc, float factor)
+{
+   if (soc > 90) return;
+   socToChargeCurrent[soc / 10] = factor;
 }

@@ -39,7 +39,7 @@
  */
 
  //Define a version string of your firmware here
-#define VER 0.11.B
+#define VER 0.12.B
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
@@ -62,6 +62,16 @@
     PARAM_ENTRY(CAT_LIM,     ucellmax,    "mV",      1000,   4500,   4200,   29  ) \
     PARAM_ENTRY(CAT_LIM,     chargemax,   "A",       1,      2047,   200,    31  ) \
     PARAM_ENTRY(CAT_LIM,     dischargemax,"A",       1,      2047,   200,    32  ) \
+    PARAM_ENTRY(CAT_LIM,     charge0soc,  "%",       0,      100,    100,    33  ) \
+    PARAM_ENTRY(CAT_LIM,     charge10soc, "%",       0,      100,    100,    34  ) \
+    PARAM_ENTRY(CAT_LIM,     charge20soc, "%",       0,      100,    100,    35  ) \
+    PARAM_ENTRY(CAT_LIM,     charge30soc, "%",       0,      100,    100,    36  ) \
+    PARAM_ENTRY(CAT_LIM,     charge40soc, "%",       0,      100,    100,    37  ) \
+    PARAM_ENTRY(CAT_LIM,     charge50soc, "%",       0,      100,    62,     38  ) \
+    PARAM_ENTRY(CAT_LIM,     charge60soc, "%",       0,      100,    50,     39  ) \
+    PARAM_ENTRY(CAT_LIM,     charge70soc, "%",       0,      100,    40,     40  ) \
+    PARAM_ENTRY(CAT_LIM,     charge80soc, "%",       0,      100,    30,     41  ) \
+    PARAM_ENTRY(CAT_LIM,     charge90soc, "%",       0,      100,    12,     42  ) \
     PARAM_ENTRY(CAT_BAT,     nomcap,      "Ah",      0,      1000,   100,    9   ) \
     PARAM_ENTRY(CAT_BAT,     ucell0soc,   "mV",      2000,   4500,   3300,   17  ) \
     PARAM_ENTRY(CAT_BAT,     ucell10soc,  "mV",      2000,   4500,   3400,   18  ) \
