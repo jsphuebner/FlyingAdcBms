@@ -291,14 +291,14 @@ static void MeasureCurrent()
       idcavg += current;
       samples++;
 
-      if (samples == 100)
+      if (samples == 200)
       {
          s32fp chargein = Param::Get(Param::chargein);
          s32fp chargeout = Param::Get(Param::chargeout);
 
-         chargein += amsIn / 100;
-         chargeout += amsOut / 100;
-         idcavg /= 100;
+         chargein += amsIn / 200;
+         chargeout += amsOut / 200;
+         idcavg /= 200;
 
          float voltage = Param::GetFloat(Param::utotal) / 1000;
          float power = voltage * idcavg;
@@ -372,7 +372,7 @@ extern "C" int main(void)
 
    TerminalCommands::SetCanMap(canMap);
 
-   s.AddTask(MeasureCurrent, 10);
+   s.AddTask(MeasureCurrent, 5);
    s.AddTask(Ms25Task, 25);
    s.AddTask(Ms100Task, 100);
 

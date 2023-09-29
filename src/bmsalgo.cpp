@@ -54,7 +54,7 @@ float BmsAlgo::EstimateSocFromVoltage(float lowestVoltage)
 
 float BmsAlgo::GetChargeCurrent(float soc, float maxCurrent)
 {
-   if (soc < 0) return socToChargeCurrent[0];
+   if (soc < 0) return socToChargeCurrent[0] * maxCurrent;
    if (soc > 100) return 0;
 
    //Interpolate between two normalized currents. Say soc=44%, current@40%=1.0, current@50%=0.625
