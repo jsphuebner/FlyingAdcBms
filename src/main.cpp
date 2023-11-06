@@ -132,13 +132,28 @@ static void ReadAdc()
       if (balanceCycles > 0 && balanceCycles < (totalBalanceCycles - 1))
       {
          float udc = Param::GetFloat((Param::PARAM_NUM)(Param::u0 + chan));
-         float packAvg = Param::GetFloat(Param::uavg);
+         float balanceTarget = 0;
 
-         if (udc < (packAvg - 3) && (balMode & BAL_ADD))
+         switch (balMode)
+         {
+         case BAL_ADD: //maximum cell voltage is target when only adding
+            balanceTarget = Param::GetFloat(Param::umax);
+            break;
+         case BAL_DIS: //minimum cell voltage is target when only dissipating
+            balanceTarget = Param::GetFloat(Param::umax);
+            break;
+         case BAL_BOTH: //average cell voltage is target when dissipating and adding
+            balanceTarget = Param::GetFloat(Param::uavg);
+            break;
+         default: //not balancing
+            break;
+         }
+
+         if (udc < (balanceTarget - 2) && (balMode & BAL_ADD))
          {
             bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_CHARGE);
          }
-         else if (udc > (packAvg + 1) && (balMode & BAL_DIS))
+         else if (udc > (balanceTarget + 1) && (balMode & BAL_DIS))
          {
             bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_DISCHARGE);
          }

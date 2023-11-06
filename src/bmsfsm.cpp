@@ -183,7 +183,9 @@ void BmsFsm::MapCanSubmodule()
    canMap->AddSend(Param::temp0, id, 56, 8, 1, 40);
 
    canMap->AddRecv(Param::idc, MAIN_MSG_ID, 32, 16, 1); //will convert to signed in code
-   canMap->AddRecv(Param::uavg, Param::GetInt(Param::pdobase), 32, 16, 1);
+   canMap->AddRecv(Param::umin, Param::GetInt(Param::pdobase), 0, 13, 1);
+   canMap->AddRecv(Param::umax, Param::GetInt(Param::pdobase), 16, 13, 1);
+   canMap->AddRecv(Param::uavg, Param::GetInt(Param::pdobase), 32, 13, 1);
 }
 
 void BmsFsm::MapCanMainmodule()
