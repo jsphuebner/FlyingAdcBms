@@ -24,19 +24,19 @@ jobs:
           echo "Number of processors:" `nproc`
           make get-deps -j `nproc`
 
-      - name: Build CCS32Clara firmware
+      - name: Build FlyingADC BMS firmware
         run: |
           make clean all
 
       - uses: actions/upload-artifact@v4
         with:
-          name: CCS32Clara firmware binary
-          path: stm32_ccs.bin
+          name: BMS firmware binary
+          path: stm32_bms.bin
 
       - uses: actions/upload-artifact@v4
         with:
-          name: CCS32Clara firmware hex
-          path: stm32_ccs.hex
+          name: BMS firmware hex
+          path: stm32_bms.hex
 
   
 # Unit tests are currently broken so don't build and run them for now
