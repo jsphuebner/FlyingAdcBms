@@ -8,7 +8,7 @@ Due to its architecture the cell inputs are somewhat tolerant to miswiring, i.e.
 Each board has 17 inputs for cell taps labeled V0 to V16. The very first input of the first board is connected to B-, i.e. the negative pole of the most negative cell. V16 of the first board is connected to the positive pole of the 16th cell. The latter is also connected to V0 of the second board.
 Not all channels of a board need to be used if it is more convenient
 
-A common CAN bus and 12V supply is connected to each
+A common CAN bus and 12V supply is connected to each module. In addition each module has an enable input an output. The first enable input must be connected to 12V whenever you want the BMS to run. subsequent enable inputs are connected to the enable output of the previous module.
 
 # OTA (over the air upgrade)
 The firmware is linked to leave the 4 kb of flash unused. Those 4 kb are reserved for the bootloader
@@ -16,6 +16,7 @@ that you can find here: https://github.com/jsphuebner/tumanako-inverter-fw-bootl
 When flashing your device for the first time you must first flash that bootloader. After that you can
 use the ESP8266 module and its web interface to upload your actual application firmware.
 The web interface is here: https://github.com/jsphuebner/esp8266-web-interface
+Binaries are here: https://github.com/jsphuebner/FlyingAdcBms/actions
 
 # Compiling
 You will need the arm-none-eabi toolchain: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
