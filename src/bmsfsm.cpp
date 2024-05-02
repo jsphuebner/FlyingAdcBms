@@ -154,7 +154,7 @@ void BmsFsm::HandleClear()
    canMap->GetHardware()->RegisterUserMessage(0x7dd);
 }
 
-bool BmsFsm::HandleRx(uint32_t canId, uint32_t data[2])
+bool BmsFsm::HandleRx(uint32_t canId, uint32_t data[2], uint8_t)
 {
    switch (canId)
    {

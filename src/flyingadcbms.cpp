@@ -30,9 +30,6 @@
 #define ADC_RATE_240SPS 0x0
 #define ADC_RATE_60SPS  0x4
 #define ADC_RATE_15SPS  0x8
-//Mux control words
-#define MUX_OFF         0x0080
-#define MUX_SELECT      0x80C0
 
 static void SendRecvI2COverSPI(uint8_t address, bool read, uint8_t* data, uint8_t len);
 
@@ -61,13 +58,13 @@ void FlyingAdcBms::SelectChannel(uint8_t channel)
    gpio_clear(GPIOB, 255);
 
    //This creates some delay and should be done anyway.
-   data[0] = 0x3; //output port register
+   data[0] = 0x3; //pin mode register
    data[1] = 0x0; //All pins as output
    SendRecvI2COverSPI(DIO_ADDR, WRITE, data, 2);
 
    if (channel == 15) //special case
    {
-      //Turn on G16 via GPIOB3 and G15 via Multiplexer
+      //Turn on G16 via GPIOB3 and G15 via Decoder
       gpio_set(GPIOB, GPIO3 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
    }
    else if (channel & 1) //odd channel
@@ -117,9 +114,7 @@ FlyingAdcBms::BalanceStatus FlyingAdcBms::SetBalancing(BalanceCommand cmd)
    switch (cmd)
    {
    case BAL_OFF:
-      //odd channel: connect UOUTP to GNDA
-      //even channel: UOUTN to GNDA
-      data[1] = 0xA; //selectedChannel & 1 ? 0xE : 0xB;
+      data[1] = 0xA; //turn off all FETs
       break;
    case BAL_DISCHARGE:
       data[1] = 0xF; //Discharge via low side FETs

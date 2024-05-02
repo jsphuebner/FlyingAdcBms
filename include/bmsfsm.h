@@ -35,7 +35,7 @@ class BmsFsm: public CanCallback
       int GetNumberOfModules() { return numModules; }
       uint8_t GetCellsOfModule(uint8_t mod) { return numChan[mod]; }
       Param::PARAM_NUM GetDataItem(Param::PARAM_NUM baseItem, int modNum = -1);
-      bool HandleRx(uint32_t canId, uint32_t data[2]);
+      bool HandleRx(uint32_t canId, uint32_t data[2], uint8_t);
       void HandleClear();
       bool IsFirst();
       uint8_t GetMaxSubmodules() { return MAX_SUB_MODULES; }

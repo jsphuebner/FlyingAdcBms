@@ -45,7 +45,8 @@
 #define NO_TEMP    128
 
 static Stm32Scheduler* scheduler;
-static CanMap* canMap;
+static CanMap* canMapExternal;
+static CanMap* canMapInternal;
 static BmsFsm* bmsFsm;
 
 static void Accumulate(float sum, float min, float max, float avg)
@@ -122,7 +123,7 @@ static void ReadAdc()
    {
       if (balanceCycles == 0)
       {
-         balanceCycles = totalBalanceCycles;
+         balanceCycles = totalBalanceCycles; //this leads to switching to next channel below
       }
       else
       {
@@ -140,7 +141,7 @@ static void ReadAdc()
             balanceTarget = Param::GetFloat(Param::umax);
             break;
          case BAL_DIS: //minimum cell voltage is target when only dissipating
-            balanceTarget = Param::GetFloat(Param::umax);
+            balanceTarget = Param::GetFloat(Param::umin);
             break;
          case BAL_BOTH: //average cell voltage is target when dissipating and adding
             balanceTarget = Param::GetFloat(Param::uavg);
@@ -149,7 +150,7 @@ static void ReadAdc()
             break;
          }
 
-         if (udc < (balanceTarget - 2) && (balMode & BAL_ADD))
+         if (udc < (balanceTarget - 3) && (balMode & BAL_ADD))
          {
             bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_CHARGE);
          }
@@ -218,7 +219,6 @@ static void ReadAdc()
    }
 }
 
-//sample 100ms task
 static void Ms100Task(void)
 {
    static float estimatedSoc = 0;
@@ -237,7 +237,7 @@ static void Ms100Task(void)
 
    BmsFsm::bmsstate stt = bmsFsm->Run((BmsFsm::bmsstate)Param::GetInt(Param::opmode));
 
-   if (stt == BmsFsm::RUNBALANCE)
+   if (stt == BmsFsm::RUNBALANCE && Param::GetFloat(Param::idc) < 0.8f)
    {
       estimatedSoc = BmsAlgo::EstimateSocFromVoltage(Param::GetFloat(Param::umin));
       Param::SetFloat(Param::soc, estimatedSoc);
@@ -258,7 +258,8 @@ static void Ms100Task(void)
    //4 bit circular counter for alive indication
    Param::SetInt(Param::counter, (Param::GetInt(Param::counter) + 1) & 0xF);
 
-   canMap->SendAll();
+   canMapExternal->SendAll();
+   canMapInternal->SendAll();
 }
 
 /** \brief This task runs the BMS voltage sensing */
@@ -377,15 +378,17 @@ extern "C" int main(void)
    scheduler = &s;
    //Initialize CAN1, including interrupts. Clock must be enabled in clock_setup()
    Stm32Can c(CAN1, CanHardware::Baud500);
-   CanMap cm(&c);
-   canMap = &cm;
-   CanSdo sdo(&c, &cm);
+   CanMap cmi(&c, false);
+   CanMap cme(&c);
+   canMapInternal = &cmi;
+   canMapExternal = &cme;
+   CanSdo sdo(&c, &cme);
 
-   BmsFsm fsm(&cm, &sdo);
+   BmsFsm fsm(&cmi, &sdo);
    c.AddCallback(&fsm);
    bmsFsm = &fsm;
 
-   TerminalCommands::SetCanMap(canMap);
+   TerminalCommands::SetCanMap(canMapExternal);
 
    s.AddTask(MeasureCurrent, 5);
    s.AddTask(Ms25Task, 25);
