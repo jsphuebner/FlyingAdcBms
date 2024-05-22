@@ -101,7 +101,7 @@ static void Accumulate(float sum, float min, float max, float avg)
 
 static void CalculateCurrentLimits()
 {
-   float chargeCurrentLimit = BmsAlgo::GetChargeCurrent(Param::GetFloat(Param::soc), Param::GetFloat(Param::chargemax));
+   float chargeCurrentLimit = BmsAlgo::GetChargeCurrent(Param::GetFloat(Param::umax));
    chargeCurrentLimit *= BmsAlgo::LimitMaximumCellVoltage(Param::GetFloat(Param::umax), Param::GetFloat(Param::ucellmax));
    Param::SetFloat(Param::chargelim, chargeCurrentLimit);
 
@@ -346,9 +346,11 @@ void Param::Change(Param::PARAM_NUM paramNum)
       for (int i = 0; i < 11; i++)
       {
          BmsAlgo::SetSocLookupPoint(i * 10, Param::GetInt((Param::PARAM_NUM)(Param::ucell0soc + i)));
-         BmsAlgo::SetChargeLimit(i * 10, Param::GetFloat((Param::PARAM_NUM)(Param::charge0soc + i)) / 100.0f);
       }
 
+      BmsAlgo::SetCCCVCurve(0, Param::GetFloat(Param::icc1), Param::GetInt(Param::ucv1));
+      BmsAlgo::SetCCCVCurve(1, Param::GetFloat(Param::icc2), Param::GetInt(Param::ucv2));
+      BmsAlgo::SetCCCVCurve(2, Param::GetFloat(Param::icc3), Param::GetInt(Param::ucellmax));
       break;
    }
 }

@@ -20,10 +20,10 @@
 #include "my_math.h"
 
 float BmsAlgo::nominalCapacity;
-//voltage to state of charge                0%    10%   20%   30%   40%   50%   60%   70%   80%   90%   100%
-uint16_t BmsAlgo::voltageToSoc[] =       { 3300, 3400, 3450, 3500, 3560, 3600, 3700, 3800, 4000, 4100, 4200 };
-//state of charge to normalized charge current
-float BmsAlgo::socToChargeCurrent[] = { 1.0f,  1.0f, 1.0f, 1.0f, 1.0f, 0.625f,0.5f,0.4f, 0.3f,0.125f,  0 };
+//voltage to state of charge            0%    10%   20%   30%   40%   50%   60%   70%   80%   90%   100%
+uint16_t BmsAlgo::voltageToSoc[] =    { 3300, 3400, 3450, 3500, 3560, 3600, 3700, 3800, 4000, 4100, 4200 };
+float BmsAlgo::ccCurrent[3];
+uint16_t BmsAlgo::cvVoltage[3];
 
 float BmsAlgo::CalculateSocFromIntegration(float lastSoc, float asDiff)
 {
@@ -52,21 +52,43 @@ float BmsAlgo::EstimateSocFromVoltage(float lowestVoltage)
    return 100;
 }
 
-float BmsAlgo::GetChargeCurrent(float soc, float maxCurrent)
+float BmsAlgo::GetChargeCurrent(float maxCellVoltage)
 {
-   if (soc < 0) return socToChargeCurrent[0] * maxCurrent;
-   if (soc > 100) return 0;
+   const float lowTempDerate = 1; //LowTempDerating();
+   const float highTempDerate = 1; //HighTempDerating(50);
+   const float cc1Current = ccCurrent[0] * lowTempDerate;
+   const uint16_t cv1Voltage = cvVoltage[0];
+   const float cc2Current = ccCurrent[1] * lowTempDerate;
+   const uint16_t cv2Voltage = cvVoltage[1];
+   const float cc3Current = ccCurrent[2] * lowTempDerate;
+   const uint16_t cv3Voltage = cvVoltage[2];
+   float result;
 
-   //Interpolate between two normalized currents. Say soc=44%, current@40%=1.0, current@50%=0.625
-   //then current = 0.625 + (10 - 44 % 10) * (1 - 0.625) / 10
+   /* Here we try to mimic VWs charge curve for a warm battery.
+    *
+    * We run 3 subsequent CC-CV curves
+    * 1st starts at cc1Current and aims for cv1Voltage
+    * 2nd starts at cc2Current and aims for cv2Voltage
+    * 3rd starts at cc3Current and aims for cv3Voltage
+    *
+    * Low temperature derating is done by scaling down the CC values
+    * High temp derating is done by generally capping charge current
+    */
 
-   int i = soc / 10;
-   float lutDiff = socToChargeCurrent[i] - socToChargeCurrent[i + 1];
-   float valDiff = 10 - (10 - (soc - i * 10));
-   float current = socToChargeCurrent[i] - valDiff * lutDiff / 10;
-   current *= maxCurrent;
+   float cv1Result = (cv1Voltage - maxCellVoltage) * 3; //P-controller gain factor 3 A/mV
+   cv1Result = MIN(cv1Result, cc1Current);
 
-   return current;
+   float cv2Result = (cv2Voltage - maxCellVoltage) * 2;
+   cv2Result = MIN(cv2Result, cc2Current);
+
+   float cv3Result = (cv3Voltage - maxCellVoltage) * 2;
+   cv3Result = MIN(cv3Result, cc3Current);
+   cv3Result = MAX(cv3Result, 0);
+
+   result = MAX(cv1Result, MAX(cv2Result, cv3Result));
+   result *= highTempDerate;
+
+   return result;
 }
 
 float BmsAlgo::LimitMinumumCellVoltage(float minVoltage, float limit)
@@ -103,14 +125,21 @@ void BmsAlgo::SetSocLookupPoint(uint8_t soc, uint16_t voltage)
    voltageToSoc[soc / 10] = voltage;
 }
 
-/** \brief Sets a charge current limit at a given SoC
+/** \brief Sets a charge current curve.
  *
- * \param soc soc at multiples of 10 up to 90%, so 0, 10, 20,...,90
- * \param factor current derating factor
+ * The overall charge curve is determined by 3 consecutive CC/CV curves
+ * charging starts with CC1 and aims for CV1
+ * Once the current drop below the CC value of curve 2 CC/CV curve 2 becomes active
+ * Likewise for curve 3
+ *
+ * \param idx Index of CC/CV curve 0, 1, 2
+ * \param current Constant current value
+ * \param voltage voltage target
  *
  */
-void BmsAlgo::SetChargeLimit(uint8_t soc, float factor)
+void BmsAlgo::SetCCCVCurve(uint8_t idx, float current, uint16_t voltage)
 {
-   if (soc > 90) return;
-   socToChargeCurrent[soc / 10] = factor;
+   if (idx > 2) return;
+   ccCurrent[idx] = current;
+   cvVoltage[idx] = voltage;
 }

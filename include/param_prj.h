@@ -39,14 +39,14 @@
  */
 
  //Define a version string of your firmware here
-#define VER 0.14.B
+#define VER 0.15.B
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 43
+//Next param id (increase when adding new parameter!): 48
 //Next value Id: 2086
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
@@ -60,19 +60,13 @@
     PARAM_ENTRY(CAT_BMS,     idlewait,    "s",       0,      100000, 60,     12  ) \
     PARAM_ENTRY(CAT_LIM,     ucellmin,    "mV",      1000,   4500,   3300,   28  ) \
     PARAM_ENTRY(CAT_LIM,     ucellmax,    "mV",      1000,   4500,   4200,   29  ) \
-    PARAM_ENTRY(CAT_LIM,     chargemax,   "A",       1,      2047,   200,    31  ) \
     PARAM_ENTRY(CAT_LIM,     dischargemax,"A",       1,      2047,   200,    32  ) \
-    PARAM_ENTRY(CAT_LIM,     charge0soc,  "%",       0,      100,    100,    33  ) \
-    PARAM_ENTRY(CAT_LIM,     charge10soc, "%",       0,      100,    100,    34  ) \
-    PARAM_ENTRY(CAT_LIM,     charge20soc, "%",       0,      100,    100,    35  ) \
-    PARAM_ENTRY(CAT_LIM,     charge30soc, "%",       0,      100,    100,    36  ) \
-    PARAM_ENTRY(CAT_LIM,     charge40soc, "%",       0,      100,    100,    37  ) \
-    PARAM_ENTRY(CAT_LIM,     charge50soc, "%",       0,      100,    62,     38  ) \
-    PARAM_ENTRY(CAT_LIM,     charge60soc, "%",       0,      100,    50,     39  ) \
-    PARAM_ENTRY(CAT_LIM,     charge70soc, "%",       0,      100,    40,     40  ) \
-    PARAM_ENTRY(CAT_LIM,     charge80soc, "%",       0,      100,    30,     41  ) \
-    PARAM_ENTRY(CAT_LIM,     charge90soc, "%",       0,      100,    12,     42  ) \
     PARAM_ENTRY(CAT_BAT,     nomcap,      "Ah",      0,      1000,   100,    9   ) \
+    PARAM_ENTRY(CAT_BAT,     icc1,        "A",       1,      2000,   50,     43  ) \
+    PARAM_ENTRY(CAT_BAT,     icc2,        "A",       1,      2000,   30,     44  ) \
+    PARAM_ENTRY(CAT_BAT,     icc3,        "A",       1,      2000,   20,     45  ) \
+    PARAM_ENTRY(CAT_BAT,     ucv1,        "mV",      3000,   4500,   3900,   46  ) \
+    PARAM_ENTRY(CAT_BAT,     ucv2,        "mV",      3000,   4500,   4000,   47  ) \
     PARAM_ENTRY(CAT_BAT,     ucell0soc,   "mV",      2000,   4500,   3300,   17  ) \
     PARAM_ENTRY(CAT_BAT,     ucell10soc,  "mV",      2000,   4500,   3400,   18  ) \
     PARAM_ENTRY(CAT_BAT,     ucell20soc,  "mV",      2000,   4500,   3450,   19  ) \

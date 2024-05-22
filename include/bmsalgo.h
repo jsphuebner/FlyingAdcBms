@@ -26,17 +26,18 @@ class BmsAlgo
    public:
       static float EstimateSocFromVoltage(float lowestVoltage);
       static float CalculateSocFromIntegration(float lastSoc, float asDiff);
-      static float GetChargeCurrent(float soc, float maxCurrent);
+      static float GetChargeCurrent(float maxCellVoltage);
       static float LimitMaximumCellVoltage(float maxVoltage, float limit);
       static float LimitMinumumCellVoltage(float minVoltage, float limit);
       static void SetNominalCapacity(float c) { nominalCapacity = c; }
       static void SetSocLookupPoint(uint8_t soc, uint16_t voltage);
-      static void SetChargeLimit(uint8_t soc, float factor);
+      static void SetCCCVCurve(uint8_t idx, float current, uint16_t voltage);
 
    private:
       static float nominalCapacity;
       static uint16_t voltageToSoc[11];
-      static float socToChargeCurrent[11];
+      static float ccCurrent[3]; //Support 3 consecutive CC/CV curves
+      static uint16_t cvVoltage[3];
 };
 
 #endif // BMSALGO_H
