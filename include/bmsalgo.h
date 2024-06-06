@@ -26,6 +26,7 @@ class BmsAlgo
    public:
       static float EstimateSocFromVoltage(float lowestVoltage);
       static float CalculateSocFromIntegration(float lastSoc, float asDiff);
+      static float CalculateSoH(float lastSoc, float newSoc, float asDiff);
       static float GetChargeCurrent(float maxCellVoltage);
       static float LimitMaximumCellVoltage(float maxVoltage, float limit);
       static float LimitMinumumCellVoltage(float minVoltage, float limit);

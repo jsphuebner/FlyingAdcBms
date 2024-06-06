@@ -143,3 +143,19 @@ void BmsAlgo::SetCCCVCurve(uint8_t idx, float current, uint16_t voltage)
    ccCurrent[idx] = current;
    cvVoltage[idx] = voltage;
 }
+
+float BmsAlgo::CalculateSoH(float lastSoc, float newSoc, float asDiff)
+{
+   float soh = -1;
+   float estimatedAs = newSoc - lastSoc; //Calculate difference in percent to last estimation
+   estimatedAs = ABS(estimatedAs); //only the absolute value is of interest
+
+   if (estimatedAs > 20) //Only estimate on larger SoC steps
+   {
+      estimatedAs*= nominalCapacity; //multiply with supposedly available amp hours
+      estimatedAs*= 3600.0f / 100; //multiply by 3600 (Ah to As) and divide by 100 because percent
+      soh = asDiff / estimatedAs;
+      soh *= 100;
+   }
+   return soh;
+}

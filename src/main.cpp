@@ -21,6 +21,7 @@
 #include <libopencm3/stm32/rtc.h>
 #include <libopencm3/stm32/can.h>
 #include <libopencm3/stm32/iwdg.h>
+#include <libopencm3/stm32/f1/bkp.h>
 #include "stm32_can.h"
 #include "canmap.h"
 #include "cansdo.h"
@@ -219,9 +220,41 @@ static void ReadAdc()
    }
 }
 
+static void CalculateSocSoh(BmsFsm::bmsstate stt)
+{
+   static float estimatedSoc = 0, estimatedSocAtValidSoh = -1;
+   float asDiff = Param::GetFloat(Param::chargein) - Param::GetFloat(Param::chargeout);
+
+   if (stt == BmsFsm::RUNBALANCE && Param::GetFloat(Param::idc) < 0.8f)
+   {
+      float lastSoh = Param::GetFloat(Param::soh);
+      estimatedSoc = BmsAlgo::EstimateSocFromVoltage(Param::GetFloat(Param::umin));
+      Param::SetFloat(Param::soc, estimatedSoc);
+
+      float soh = BmsAlgo::CalculateSoH(estimatedSocAtValidSoh, estimatedSoc, asDiff);
+
+      if (estimatedSocAtValidSoh < 0)
+         estimatedSocAtValidSoh = estimatedSoc;
+
+      if (soh > 0)
+      {
+         soh = IIRFILTERF(lastSoh, soh, 10);
+         BKP_DR2 = (uint16_t)(soh * 100);
+         Param::SetFloat(Param::soh, soh);
+         estimatedSocAtValidSoh = estimatedSoc;
+         Param::SetInt(Param::chargein, 0);
+         Param::SetInt(Param::chargeout, 0);
+      }
+   }
+   else
+   {
+      float soc = BmsAlgo::CalculateSocFromIntegration(estimatedSoc, asDiff);
+      Param::SetFloat(Param::soc, soc);
+   }
+}
+
 static void Ms100Task(void)
 {
-   static float estimatedSoc = 0;
    //The boot loader enables the watchdog, we have to reset it
    //at least every 2s or otherwise the controller is hard reset.
    iwdg_reset();
@@ -237,21 +270,10 @@ static void Ms100Task(void)
 
    BmsFsm::bmsstate stt = bmsFsm->Run((BmsFsm::bmsstate)Param::GetInt(Param::opmode));
 
-   if (stt == BmsFsm::RUNBALANCE && Param::GetFloat(Param::idc) < 0.8f)
-   {
-      estimatedSoc = BmsAlgo::EstimateSocFromVoltage(Param::GetFloat(Param::umin));
-      Param::SetFloat(Param::soc, estimatedSoc);
-   }
-   else
-   {
-      float asDiff = Param::GetFloat(Param::chargein) - Param::GetFloat(Param::chargeout);
-      float soc = BmsAlgo::CalculateSocFromIntegration(estimatedSoc, asDiff);
-      Param::SetFloat(Param::soc, soc);
-   }
-
    if (bmsFsm->IsFirst())
    {
       CalculateCurrentLimits();
+      CalculateSocSoh(stt);
    }
 
    Param::SetInt(Param::opmode, stt);
@@ -400,6 +422,11 @@ extern "C" int main(void)
    Param::Change(Param::PARAM_LAST); //Call callback once for general parameter propagation
 
    DigIo::selfena_out.Set();
+
+   if (BKP_DR2 != 0)
+      Param::SetFloat(Param::soh, (float)BKP_DR2 / 100.0f);
+   else
+      Param::SetInt(Param::soh, 100);
 
    while(1)
    {
