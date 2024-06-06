@@ -24,15 +24,17 @@
 
 #define IS_FIRST_THRESH       1800
 #define SDO_INDEX_PARAMS      0x2000
-#define MAIN_MSG_ID           0x12C
 
 BmsFsm::BmsFsm(CanMap* cm, CanSdo* cs)
    : canMap(cm), canSdo(cs), isMain(false), infoIndex(1), numModules(1), cycles(0)
 {
    cm->GetHardware()->AddCallback(this);
    HandleClear();
-   recvAddr = Param::GetInt(Param::sdobase);
-   ourAddr = recvAddr;
+   recvNodeId = Param::GetInt(Param::sdobase);
+   pdobase = Param::GetInt(Param::pdobase);
+   ourNodeId = recvNodeId;
+   ourIndex = 0;
+   recvIndex = 0;
 }
 
 BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
@@ -45,7 +47,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
    case BOOT:
       if (IsFirst())
       {
-         canSdo->SetNodeId(recvAddr);
+         canSdo->SetNodeId(recvNodeId);
          canMap->Clear();
          DigIo::nextena_out.Set();
          isMain = true;
@@ -55,18 +57,20 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
       }
       else
       {
-         recvAddr = 0;
+         recvNodeId = 0;
          return GET_ADDR;
       }
       break;
    case GET_ADDR:
-      if (recvAddr > 0)
+      if (recvNodeId > 0)
       {
-         ourAddr = recvAddr;
-         canSdo->SetNodeId(ourAddr);
+         ourNodeId = recvNodeId;
+         ourIndex = recvIndex;
+         canSdo->SetNodeId(ourNodeId);
          DigIo::nextena_out.Set();
          canMap->Clear();
          MapCanSubmodule();
+         Param::SetInt(Param::modaddr, ourNodeId);
          return SET_ADDR;
       }
       break;
@@ -75,7 +79,9 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
 
       if (cycles == 5)
       {
-         data[1] = recvAddr + 1;
+         data[1] = recvNodeId + 1;
+         data[1] |= (ourIndex + 1) << 8;
+         data[1] |= pdobase << 16;
          canMap->GetHardware()->Send(0x7dd, data);
          cycles = 0;
          return isMain ? REQ_INFO : INIT;
@@ -144,7 +150,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
 Param::PARAM_NUM BmsFsm::GetDataItem(Param::PARAM_NUM baseItem, int modNum)
 {
    const int numberOfParametersPerModule = 4;
-   if (modNum < 0) modNum = ourAddr - Param::GetInt(Param::sdobase);
+   if (modNum < 0) modNum = ourIndex;
 
    return (Param::PARAM_NUM)((int)baseItem + modNum * numberOfParametersPerModule);
 }
@@ -159,7 +165,9 @@ bool BmsFsm::HandleRx(uint32_t canId, uint32_t data[2], uint8_t)
    switch (canId)
    {
    case 0x7dd:
-      recvAddr = data[1] & 0xFF;
+      recvNodeId = data[1] & 0xFF;
+      recvIndex = (data[1] >> 8) & 0xFF;
+      pdobase = data[1] >> 16;
       return true;
    }
    return false;
@@ -174,7 +182,7 @@ bool BmsFsm::IsFirst()
 
 void BmsFsm::MapCanSubmodule()
 {
-   int id = Param::GetInt(Param::pdobase) + ourAddr - Param::GetInt(Param::sdobase);
+   int id = pdobase + ourIndex + 1; //main module has two PDO messages
    canMap->AddSend(Param::umin0, id, 0, 13, 1);
    canMap->AddSend(Param::umax0, id, 16, 13, 1);
    canMap->AddSend(Param::counter, id, 30, 2, 1);
@@ -182,17 +190,17 @@ void BmsFsm::MapCanSubmodule()
    canMap->AddSend(Param::temp0, id, 48, 8, 1, 40); //TODO: send here tempmin and tempmax
    canMap->AddSend(Param::temp0, id, 56, 8, 1, 40);
 
-   canMap->AddRecv(Param::idc, MAIN_MSG_ID, 32, 16, 1); //will convert to signed in code
-   canMap->AddRecv(Param::umin, Param::GetInt(Param::pdobase), 0, 13, 1);
-   canMap->AddRecv(Param::umax, Param::GetInt(Param::pdobase), 16, 13, 1);
-   canMap->AddRecv(Param::uavg, Param::GetInt(Param::pdobase), 32, 13, 1);
+   canMap->AddRecv(Param::idc, pdobase, 32, 16, 1); //will convert to signed in code
+   canMap->AddRecv(Param::umin, pdobase + 1, 0, 13, 1);
+   canMap->AddRecv(Param::umax, pdobase + 1, 16, 13, 1);
+   canMap->AddRecv(Param::uavg, pdobase + 1, 32, 13, 1);
 }
 
 void BmsFsm::MapCanMainmodule()
 {
    for (int i = 1; i < GetMaxSubmodules(); i++)
    {
-      int id = Param::GetInt(Param::pdobase) + i;
+      int id = pdobase + i + 1;
       canMap->AddRecv(GetDataItem(Param::umin0, i), id, 0, 13, 1);
       canMap->AddRecv(GetDataItem(Param::umax0, i), id, 16, 13, 1);
       canMap->AddRecv(GetDataItem(Param::uavg0, i), id, 32, 13, 1);
@@ -202,17 +210,17 @@ void BmsFsm::MapCanMainmodule()
    int id = Param::GetInt(Param::pdobase);
 
    //we don't expose our local accumulated values but the "global" ones
-   canMap->AddSend(Param::umin, id, 0, 13, 1);
-   canMap->AddSend(Param::umax, id, 16, 13, 1);
-   canMap->AddSend(Param::counter, id, 30, 2, 1);
-   canMap->AddSend(Param::uavg, id, 32, 13, 1);
-   canMap->AddSend(Param::tempmin, id, 48, 8, 1, 40);
-   canMap->AddSend(Param::tempmax, id, 56, 8, 1, 40);
+   canMap->AddSend(Param::umin, id + 1, 0, 13, 1);
+   canMap->AddSend(Param::umax, id + 1, 16, 13, 1);
+   canMap->AddSend(Param::counter, id + 1, 30, 2, 1);
+   canMap->AddSend(Param::uavg, id + 1, 32, 13, 1);
+   canMap->AddSend(Param::tempmin, id + 1, 48, 8, 1, 40);
+   canMap->AddSend(Param::tempmax, id + 1, 56, 8, 1, 40);
 
-   canMap->AddSend(Param::chargelim, MAIN_MSG_ID, 0, 11, 1);
-   canMap->AddSend(Param::dischargelim, MAIN_MSG_ID, 11, 11, 1);
-   canMap->AddSend(Param::soc, MAIN_MSG_ID, 22, 10, 10);
-   canMap->AddSend(Param::idcavg, MAIN_MSG_ID, 32, 16, 10);
-   canMap->AddSend(Param::utotal, MAIN_MSG_ID, 48, 10, 0.001f);
-   canMap->AddSend(Param::counter, MAIN_MSG_ID, 62, 2, 1);
+   canMap->AddSend(Param::chargelim, id, 0, 11, 1);
+   canMap->AddSend(Param::dischargelim, id, 11, 11, 1);
+   canMap->AddSend(Param::soc, id, 22, 10, 10);
+   canMap->AddSend(Param::idcavg, id, 32, 16, 10);
+   canMap->AddSend(Param::utotal, id, 48, 10, 0.001f);
+   canMap->AddSend(Param::counter, id, 62, 2, 1);
 }

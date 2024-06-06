@@ -47,8 +47,11 @@ class BmsFsm: public CanCallback
       CanMap *canMap;
       CanSdo *canSdo;
       bool isMain;
-      uint8_t recvAddr;
-      uint8_t ourAddr;
+      uint8_t recvNodeId;
+      uint8_t recvIndex;
+      uint8_t ourNodeId;
+      uint8_t ourIndex;
+      uint16_t pdobase;
       uint8_t infoIndex;
       uint8_t numModules;
       uint32_t cycles;
