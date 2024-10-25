@@ -12,10 +12,13 @@ A common CAN bus and 12V supply is connected to each module. In addition each mo
 
 # OTA (over the air upgrade)
 The firmware is linked to leave the 4 kb of flash unused. Those 4 kb are reserved for the bootloader
-that you can find here: https://github.com/jsphuebner/tumanako-inverter-fw-bootloader
+that you can find here: https://github.com/jsphuebner/stm32-CANBootloader/
+
 When flashing your device for the first time you must first flash that bootloader. After that you can
-use the ESP8266 module and its web interface to upload your actual application firmware.
-The web interface is here: https://github.com/jsphuebner/esp8266-web-interface
+use the ESP32 CAN module and its web interface to upload your actual application firmware.
+
+The web interface is here: https://github.com/jsphuebner/esp32-web-interface/tree/can-backend
+
 Binaries are here: https://github.com/jsphuebner/FlyingAdcBms/actions
 
 # Compiling
