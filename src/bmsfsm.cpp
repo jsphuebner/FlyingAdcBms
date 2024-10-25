@@ -190,7 +190,7 @@ void BmsFsm::MapCanSubmodule()
    canMap->AddSend(Param::temp0, id, 48, 8, 1, 40); //TODO: send here tempmin and tempmax
    canMap->AddSend(Param::temp0, id, 56, 8, 1, 40);
 
-   canMap->AddRecv(Param::idc, pdobase, 32, 16, 1); //will convert to signed in code
+   canMap->AddRecv(Param::idcavg, pdobase, 32, 16, 0.1);
    canMap->AddRecv(Param::umin, pdobase + 1, 0, 13, 1);
    canMap->AddRecv(Param::umax, pdobase + 1, 16, 13, 1);
    canMap->AddRecv(Param::uavg, pdobase + 1, 32, 13, 1);

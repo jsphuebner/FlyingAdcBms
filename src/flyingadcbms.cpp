@@ -67,20 +67,16 @@ void FlyingAdcBms::SelectChannel(uint8_t channel)
       //Turn on G16 via GPIOB3 and G15 via Decoder
       gpio_set(GPIOB, GPIO3 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
    }
-   else if (channel & 1) //odd channel
+   else
    {
+      //Example Chan8: turn on G8 (=even mux word 4) and G9 (odd mux word 4)
       //Example Chan9: turn on G10 (=even mux word 5) and G9 (odd mux word 4)
-      uint8_t evenMuxWord = channel / 2 + 1;
+      uint8_t evenMuxWord = (channel / 2) + (channel & 1);
       uint8_t oddMuxWord = (channel / 2) << 4;
       gpio_set(GPIOB, evenMuxWord | oddMuxWord | GPIO7);
    }
-   else //even channel
-   {
-      //Example Chan8: turn on G8 (=even mux word 4) and G9 (odd mux word 4)
-      uint8_t evenMuxWord = channel / 2;
-      uint8_t oddMuxWord = evenMuxWord << 4;
-      gpio_set(GPIOB, evenMuxWord | oddMuxWord | GPIO7);
-   }
+   //More delay
+   SetBalancing(BAL_OFF);
 }
 
 void FlyingAdcBms::StartAdc()

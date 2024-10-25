@@ -39,18 +39,18 @@
  */
 
  //Define a version string of your firmware here
-#define VER 0.16.B
+#define VER 0.18.B
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 49
+//Next param id (increase when adding new parameter!): 50
 //Next value Id: 2087
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
-    PARAM_ENTRY(CAT_BMS,     gain,        "mV/dig",  1,      1000,   588,    3   ) \
+    PARAM_ENTRY(CAT_BMS,     gain,        "mV/dig",  1,      1000,   586,    3   ) \
     PARAM_ENTRY(CAT_BMS,     correction0, "ppm",     -10000, 10000,  -1250,  14  ) \
     PARAM_ENTRY(CAT_BMS,     correction1, "ppm",     -10000, 10000,  1500,   15  ) \
     PARAM_ENTRY(CAT_BMS,     correction15,"ppm",     -10000, 10000,  1000,   16  ) \
@@ -85,6 +85,7 @@
     PARAM_ENTRY(CAT_COMM,    pdobase,     "",        0,      2047,   500,    10  ) \
     PARAM_ENTRY(CAT_COMM,    sdobase,     "",        0,      63,     10,     11  ) \
     TESTP_ENTRY(CAT_TEST,    enable,      OFFON,     0,      1,      1,      48   ) \
+    TESTP_ENTRY(CAT_TEST,    testchan,    "",        -1,     15,     -1,     49   ) \
     VALUE_ENTRY(opmode,      OPMODES,2000 ) \
     VALUE_ENTRY(version,     VERSTR, 2001 ) \
     VALUE_ENTRY(modaddr,     "",     2045 ) \

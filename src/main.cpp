@@ -96,7 +96,6 @@ static void Accumulate(float sum, float min, float max, float avg)
       Param::SetFloat(Param::umin0, min);
       Param::SetFloat(Param::umax0, max);
       Param::SetFloat(Param::udelta, max - min);
-      Param::SetFloat(Param::idcavg, ((float)(int16_t)Param::GetInt(Param::idc)) / 10);
    }
 }
 
@@ -116,8 +115,8 @@ static void ReadAdc()
    int totalBalanceCycles = 30;
    static uint8_t chan = 0, balanceCycles = 0;
    static float sum = 0, min, max, avg;
-   bool balance = Param::GetInt(Param::opmode) == BmsFsm::RUNBALANCE && Param::GetFloat(Param::uavg) > Param::GetFloat(Param::ubalance);
    int balMode = Param::GetInt(Param::balmode);
+   bool balance = Param::GetInt(Param::opmode) == BmsFsm::RUNBALANCE && Param::GetFloat(Param::uavg) > Param::GetFloat(Param::ubalance) && BAL_OFF != balMode;
    FlyingAdcBms::BalanceStatus bstt;
 
    if (balance)
@@ -220,6 +219,23 @@ static void ReadAdc()
    }
 }
 
+static void TestAdc(int chan)
+{
+   float gain = Param::GetFloat(Param::gain);
+
+   if (chan == 0)
+      gain *= 1 + Param::GetFloat(Param::correction0) / 1000000.0f;
+   else if (chan == 1)
+      gain *= 1 + Param::GetFloat(Param::correction1) / 1000000.0f;
+   else if (chan == 15)
+      gain *= 1 + Param::GetFloat(Param::correction15) / 1000000.0f;
+
+   float udc = FlyingAdcBms::GetResult(gain / 1000.0f);
+   FlyingAdcBms::SelectChannel(chan);
+   FlyingAdcBms::StartAdc();
+   Param::SetFloat((Param::PARAM_NUM)(Param::u0 + chan), udc);
+}
+
 static void CalculateSocSoh(BmsFsm::bmsstate stt)
 {
    static float estimatedSoc = 0, estimatedSocAtValidSoh = -1;
@@ -288,15 +304,14 @@ static void Ms100Task(void)
 static void Ms25Task(void)
 {
    int opmode = Param::GetInt(Param::opmode);
+   int testchan = Param::GetInt(Param::testchan);
 
-   if (Param::GetBool(Param::enable) && (opmode == BmsFsm::RUN || opmode == BmsFsm::RUNBALANCE))
-   {
+   if (testchan >= 0)
+      TestAdc(testchan);
+   else if (Param::GetBool(Param::enable) && (opmode == BmsFsm::RUN || opmode == BmsFsm::RUNBALANCE))
       ReadAdc();
-   }
    else
-   {
       FlyingAdcBms::MuxOff();
-   }
 }
 
 static void MeasureCurrent()
