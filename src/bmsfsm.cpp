@@ -160,7 +160,7 @@ void BmsFsm::HandleClear()
    canMap->GetHardware()->RegisterUserMessage(0x7dd);
 }
 
-bool BmsFsm::HandleRx(uint32_t canId, uint32_t data[2], uint8_t)
+void BmsFsm::HandleRx(uint32_t canId, uint32_t data[2], uint8_t)
 {
    switch (canId)
    {
@@ -168,9 +168,7 @@ bool BmsFsm::HandleRx(uint32_t canId, uint32_t data[2], uint8_t)
       recvNodeId = data[1] & 0xFF;
       recvIndex = (data[1] >> 8) & 0xFF;
       pdobase = data[1] >> 16;
-      return true;
    }
-   return false;
 }
 
 bool BmsFsm::IsFirst()
