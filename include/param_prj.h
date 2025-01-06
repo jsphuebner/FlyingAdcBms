@@ -39,7 +39,7 @@
  */
 
  //Define a version string of your firmware here
-#define VER 0.19.B
+#define VER 0.20.B
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
@@ -82,8 +82,8 @@
     PARAM_ENTRY(CAT_SENS,    idcofs,      "dig",    -4095,   4095,   0,      7   ) \
     PARAM_ENTRY(CAT_SENS,    idcmode,     IDCMODES,  0,      3,      0,      8   ) \
     PARAM_ENTRY(CAT_SENS,    tempsns,     TEMPSNS,   0,      3,     -1,      52  ) \
-    PARAM_ENTRY(CAT_SENS,    tempres,     "Ohm",     0,      500000, 4000,   50  ) \
-    PARAM_ENTRY(CAT_SENS,    tempbeta,    "",        1,      100000, 1450,   51  ) \
+    PARAM_ENTRY(CAT_SENS,    tempres,     "Ohm",     10,     500000, 10000,  50  ) \
+    PARAM_ENTRY(CAT_SENS,    tempbeta,    "",        1,      100000, 3900,   51  ) \
     PARAM_ENTRY(CAT_COMM,    pdobase,     "",        0,      2047,   500,    10  ) \
     PARAM_ENTRY(CAT_COMM,    sdobase,     "",        0,      63,     10,     11  ) \
     TESTP_ENTRY(CAT_TEST,    enable,      OFFON,     0,      1,      1,      48   ) \

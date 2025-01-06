@@ -29,7 +29,9 @@ class BmsAlgo
       static float CalculateSoH(float lastSoc, float newSoc, float asDiff);
       static float GetChargeCurrent(float maxCellVoltage);
       static float LimitMaximumCellVoltage(float maxVoltage, float limit);
-      static float LimitMinumumCellVoltage(float minVoltage, float limit);
+      static float LimitMinimumCellVoltage(float minVoltage, float limit);
+      static float LowTemperatureDerating(float lowTemp);
+      static float HighTemperatureDerating(float highTemp, float maxTemp);
       static void SetNominalCapacity(float c) { nominalCapacity = c; }
       static void SetSocLookupPoint(uint8_t soc, uint16_t voltage);
       static void SetCCCVCurve(uint8_t idx, float current, uint16_t voltage);

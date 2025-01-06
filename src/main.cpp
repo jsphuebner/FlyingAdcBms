@@ -104,10 +104,13 @@ static void CalculateCurrentLimits()
 {
    float chargeCurrentLimit = BmsAlgo::GetChargeCurrent(Param::GetFloat(Param::umax));
    chargeCurrentLimit *= BmsAlgo::LimitMaximumCellVoltage(Param::GetFloat(Param::umax), Param::GetFloat(Param::ucellmax));
+   chargeCurrentLimit *= BmsAlgo::LowTemperatureDerating(Param::GetFloat(Param::tempmin));
+   chargeCurrentLimit *= BmsAlgo::HighTemperatureDerating(Param::GetFloat(Param::tempmax), 50);
    Param::SetFloat(Param::chargelim, chargeCurrentLimit);
 
    float dischargeCurrentLimit = Param::GetFloat(Param::dischargemax);
-   dischargeCurrentLimit *= BmsAlgo::LimitMinumumCellVoltage(Param::GetFloat(Param::umin), Param::GetFloat(Param::ucellmin));
+   dischargeCurrentLimit *= BmsAlgo::LimitMinimumCellVoltage(Param::GetFloat(Param::umin), Param::GetFloat(Param::ucellmin));
+   dischargeCurrentLimit *= BmsAlgo::HighTemperatureDerating(Param::GetFloat(Param::tempmax), 53);
    Param::SetFloat(Param::dischargelim, dischargeCurrentLimit);
 }
 

@@ -91,7 +91,7 @@ float BmsAlgo::GetChargeCurrent(float maxCellVoltage)
    return result;
 }
 
-float BmsAlgo::LimitMinumumCellVoltage(float minVoltage, float limit)
+float BmsAlgo::LimitMinimumCellVoltage(float minVoltage, float limit)
 {
    float factor = (minVoltage - limit) / 50; //start limiting 50mV before hitting minimum
    factor = MAX(0, factor);
@@ -110,6 +110,36 @@ float BmsAlgo::LimitMaximumCellVoltage(float maxVoltage, float limit)
    float factor = (limit - maxVoltage) / 10; //start limiting 10mV before hitting maximum
    factor = MAX(0, factor);
    factor = MIN(1, factor);
+   return factor;
+}
+
+float BmsAlgo::LowTemperatureDerating(float lowTemp)
+{
+   const float drt1Temp = 25.0f;
+   const float drt2Temp = 0;
+   const float drt3Temp = -20.0f;
+   const float factorAtDrt2 = 0.3f;
+   float factor;
+
+   //We allow the ideal charge curve above 25°C
+   if (lowTemp > drt1Temp)
+      factor = 1;
+   else if (lowTemp > drt2Temp) //above 0°C allow at least factorAtDrt2 fraction of the charge current and ramp up linearly with temperature
+      factor = factorAtDrt2 + (1 - factorAtDrt2) * (lowTemp - drt2Temp) / (drt1Temp - drt2Temp);
+   else if (lowTemp > drt3Temp) //below 0°C ramp down linearly
+      factor = factorAtDrt2 * (lowTemp - drt3Temp) / (drt2Temp - drt3Temp);
+   else
+      factor = 0; //inhibit charging below -20°C
+
+   return factor;
+}
+
+float BmsAlgo::HighTemperatureDerating(float highTemp, float maxTemp)
+{
+   float factor = (maxTemp - highTemp) * 0.15f;
+   factor = MIN(1, factor);
+   factor = MAX(0, factor);
+
    return factor;
 }
 
