@@ -149,7 +149,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
 
 Param::PARAM_NUM BmsFsm::GetDataItem(Param::PARAM_NUM baseItem, int modNum)
 {
-   const int numberOfParametersPerModule = 4;
+   const int numberOfParametersPerModule = 5;
    if (modNum < 0) modNum = ourIndex;
 
    return (Param::PARAM_NUM)((int)baseItem + modNum * numberOfParametersPerModule);
@@ -185,8 +185,8 @@ void BmsFsm::MapCanSubmodule()
    canMap->AddSend(Param::umax0, id, 16, 13, 1);
    canMap->AddSend(Param::counter, id, 30, 2, 1);
    canMap->AddSend(Param::uavg0, id, 32, 13, 1);
-   canMap->AddSend(Param::temp0, id, 48, 8, 1, 40); //TODO: send here tempmin and tempmax
-   canMap->AddSend(Param::temp0, id, 56, 8, 1, 40);
+   canMap->AddSend(Param::tempmin0, id, 48, 8, 1, 40);
+   canMap->AddSend(Param::tempmax0, id, 56, 8, 1, 40);
 
    canMap->AddRecv(Param::idcavg, pdobase, 32, 16, 0.1);
    canMap->AddRecv(Param::umin, pdobase + 1, 0, 13, 1);
@@ -202,7 +202,8 @@ void BmsFsm::MapCanMainmodule()
       canMap->AddRecv(GetDataItem(Param::umin0, i), id, 0, 13, 1);
       canMap->AddRecv(GetDataItem(Param::umax0, i), id, 16, 13, 1);
       canMap->AddRecv(GetDataItem(Param::uavg0, i), id, 32, 13, 1);
-      canMap->AddRecv(GetDataItem(Param::temp0, i), id, 48, 8, 1, -40);
+      canMap->AddRecv(GetDataItem(Param::tempmin0, i), id, 48, 8, 1, -40);
+      canMap->AddRecv(GetDataItem(Param::tempmax0, i), id, 56, 8, 1, -40);
    }
 
    int id = Param::GetInt(Param::pdobase);

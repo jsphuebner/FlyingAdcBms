@@ -39,15 +39,15 @@
  */
 
  //Define a version string of your firmware here
-#define VER 0.18.B
+#define VER 0.19.B
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 50
-//Next value Id: 2087
+//Next param id (increase when adding new parameter!): 53
+//Next value Id: 2101
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
     PARAM_ENTRY(CAT_BMS,     gain,        "mV/dig",  1,      1000,   586,    3   ) \
@@ -81,7 +81,9 @@
     PARAM_ENTRY(CAT_SENS,    idcgain,     "dig/A",  -1000,   1000,   10,     6   ) \
     PARAM_ENTRY(CAT_SENS,    idcofs,      "dig",    -4095,   4095,   0,      7   ) \
     PARAM_ENTRY(CAT_SENS,    idcmode,     IDCMODES,  0,      3,      0,      8   ) \
-    PARAM_ENTRY(CAT_SENS,    tempsns,     TEMPSNS,   -1,     3,      -1,     13  ) \
+    PARAM_ENTRY(CAT_SENS,    tempsns,     TEMPSNS,   0,      3,     -1,      52  ) \
+    PARAM_ENTRY(CAT_SENS,    tempres,     "Ohm",     0,      500000, 4000,   50  ) \
+    PARAM_ENTRY(CAT_SENS,    tempbeta,    "",        1,      100000, 1450,   51  ) \
     PARAM_ENTRY(CAT_COMM,    pdobase,     "",        0,      2047,   500,    10  ) \
     PARAM_ENTRY(CAT_COMM,    sdobase,     "",        0,      63,     10,     11  ) \
     TESTP_ENTRY(CAT_TEST,    enable,      OFFON,     0,      1,      1,      48   ) \
@@ -127,35 +129,43 @@
     VALUE_ENTRY(uavg0,       "mV",   2047 ) \
     VALUE_ENTRY(umin0,       "mV",   2048 ) \
     VALUE_ENTRY(umax0,       "mV",   2049 ) \
-    VALUE_ENTRY(temp0,       "°C",   2078 ) \
+    VALUE_ENTRY(tempmin0,    "°C",   2078 ) \
+    VALUE_ENTRY(tempmax0,    "°C",   2079 ) \
     VALUE_ENTRY(uavg1,       "mV",   2050 ) \
     VALUE_ENTRY(umin1,       "mV",   2051 ) \
     VALUE_ENTRY(umax1,       "mV",   2052 ) \
-    VALUE_ENTRY(temp1,       "°C",   2079 ) \
+    VALUE_ENTRY(tempmin1,    "°C",   2087 ) \
+    VALUE_ENTRY(tempmax1,    "°C",   2088 ) \
     VALUE_ENTRY(uavg2,       "mV",   2053 ) \
     VALUE_ENTRY(umin2,       "mV",   2054 ) \
     VALUE_ENTRY(umax2,       "mV",   2055 ) \
-    VALUE_ENTRY(temp2,       "°C",   2080 ) \
+    VALUE_ENTRY(tempmin2,    "°C",   2089 ) \
+    VALUE_ENTRY(tempmax2,    "°C",   2090 ) \
     VALUE_ENTRY(uavg3,       "mV",   2056 ) \
     VALUE_ENTRY(umin3,       "mV",   2057 ) \
     VALUE_ENTRY(umax3,       "mV",   2058 ) \
-    VALUE_ENTRY(temp3,       "°C",   2081 ) \
+    VALUE_ENTRY(tempmin3,    "°C",   2091 ) \
+    VALUE_ENTRY(tempmax3,    "°C",   2092 ) \
     VALUE_ENTRY(uavg4,       "mV",   2059 ) \
     VALUE_ENTRY(umin4,       "mV",   2060 ) \
     VALUE_ENTRY(umax4,       "mV",   2061 ) \
-    VALUE_ENTRY(temp4,       "°C",   2082 ) \
+    VALUE_ENTRY(tempmin4,    "°C",   2093 ) \
+    VALUE_ENTRY(tempmax4,    "°C",   2094 ) \
     VALUE_ENTRY(uavg5,       "mV",   2062 ) \
     VALUE_ENTRY(umin5,       "mV",   2063 ) \
     VALUE_ENTRY(umax5,       "mV",   2064 ) \
-    VALUE_ENTRY(temp5,       "°C",   2083 ) \
+    VALUE_ENTRY(tempmin5,    "°C",   2095 ) \
+    VALUE_ENTRY(tempmax5,    "°C",   2096 ) \
     VALUE_ENTRY(uavg6,       "mV",   2065 ) \
     VALUE_ENTRY(umin6,       "mV",   2066 ) \
     VALUE_ENTRY(umax6,       "mV",   2067 ) \
-    VALUE_ENTRY(temp6,       "°C",   2084 ) \
+    VALUE_ENTRY(tempmin6,    "°C",   2097 ) \
+    VALUE_ENTRY(tempmax6,    "°C",   2098 ) \
     VALUE_ENTRY(uavg7,       "mV",   2068 ) \
     VALUE_ENTRY(umin7,       "mV",   2069 ) \
     VALUE_ENTRY(umax7,       "mV",   2070 ) \
-    VALUE_ENTRY(temp7,       "°C",   2085 ) \
+    VALUE_ENTRY(tempmin7,    "°C",   2099 ) \
+    VALUE_ENTRY(tempmax7,    "°C",   2100 ) \
     VALUE_ENTRY(u0cmd,       BAL,    2022 ) \
     VALUE_ENTRY(u1cmd,       BAL,    2023 ) \
     VALUE_ENTRY(u2cmd,       BAL,    2024 ) \
@@ -181,7 +191,7 @@
 #define BALMODE      "0=Off, 1=Additive, 2=Dissipative, 3=Both"
 #define BAL          "0=None, 1=Discharge, 2=ChargePos, 3=ChargeNeg"
 #define IDCMODES     "0=Off, 1=AdcSingle, 2=AdcDifferential, 3=IsaCan"
-#define TEMPSNS      "-1=Off, 0=JCurve, 1=KTY81, 2=PT1000, 3=Leaf"
+#define TEMPSNS      "0=None, 1=Chan1, 2=Chan2, 3=Both"
 #define CAT_TEST     "Testing"
 #define CAT_BMS      "BMS"
 #define CAT_SENS     "Sensor setup"

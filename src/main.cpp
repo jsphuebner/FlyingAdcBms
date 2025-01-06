@@ -72,12 +72,13 @@ static void Accumulate(float sum, float min, float max, float avg)
 
       for (int i = 0; i < bmsFsm->GetNumberOfModules(); i++)
       {
-         float temp = Param::GetFloat(bmsFsm->GetDataItem(Param::temp0, i));
+         float tempmin0 = Param::GetFloat(bmsFsm->GetDataItem(Param::tempmin0, i));
+         float tempmax0 = Param::GetFloat(bmsFsm->GetDataItem(Param::tempmax0, i));
 
-         if (temp < NO_TEMP)
+         if (tempmin0 < NO_TEMP)
          {
-            tempmin = MIN(tempmin, temp);
-            tempmax = MAX(tempmin, temp);
+            tempmin = MIN(tempmin, tempmin0);
+            tempmax = MAX(tempmax, tempmax0);
          }
       }
 
@@ -269,6 +270,29 @@ static void CalculateSocSoh(BmsFsm::bmsstate stt)
    }
 }
 
+static void ReadTemperatures()
+{
+   int sensor = Param::GetInt(Param::tempsns);
+   int nomRes = Param::GetInt(Param::tempres);
+   int beta = Param::GetInt(Param::tempbeta);
+   float temp1 = NO_TEMP, temp2 = NO_TEMP, tempmin = NO_TEMP, tempmax = NO_TEMP;
+
+   if (sensor & 1)
+      tempmin = tempmax = temp1 = TempMeas::AdcToTemperature(AnaIn::temp1.Get(), nomRes, beta);
+
+   if (sensor & 2)
+      tempmin = tempmax = temp2 = TempMeas::AdcToTemperature(AnaIn::temp2.Get(), nomRes, beta);
+
+   if (sensor == 3) //two sensors, calculate min and max
+   {
+      tempmin = MIN(temp1, temp2);
+      tempmax = MAX(temp1, temp2);
+   }
+
+   Param::SetFloat(Param::tempmin0, tempmin);
+   Param::SetFloat(Param::tempmax0, tempmax);
+}
+
 static void Ms100Task(void)
 {
    //The boot loader enables the watchdog, we have to reset it
@@ -277,14 +301,9 @@ static void Ms100Task(void)
    float cpuLoad = scheduler->GetCpuLoad();
    Param::SetFloat(Param::cpuload, cpuLoad / 10);
    DigIo::led_out.Toggle();
-   int sensor = Param::GetInt(Param::tempsns);
-
-   if (sensor >= 0)
-      Param::SetFloat(Param::temp0, TempMeas::Lookup(AnaIn::temp2.Get(), (TempMeas::Sensors)sensor));
-   else
-      Param::SetInt(Param::temp0, NO_TEMP);
 
    BmsFsm::bmsstate stt = bmsFsm->Run((BmsFsm::bmsstate)Param::GetInt(Param::opmode));
+   ReadTemperatures();
 
    if (bmsFsm->IsFirst())
    {
