@@ -103,7 +103,6 @@ static void Accumulate(float sum, float min, float max, float avg)
 static void CalculateCurrentLimits()
 {
    float chargeCurrentLimit = BmsAlgo::GetChargeCurrent(Param::GetFloat(Param::umax));
-   chargeCurrentLimit *= BmsAlgo::LimitMaximumCellVoltage(Param::GetFloat(Param::umax), Param::GetFloat(Param::ucellmax));
    chargeCurrentLimit *= BmsAlgo::LowTemperatureDerating(Param::GetFloat(Param::tempmin));
    chargeCurrentLimit *= BmsAlgo::HighTemperatureDerating(Param::GetFloat(Param::tempmax), 50);
    Param::SetFloat(Param::chargelim, chargeCurrentLimit);

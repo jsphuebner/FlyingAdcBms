@@ -54,14 +54,6 @@ float BmsAlgo::EstimateSocFromVoltage(float lowestVoltage)
 
 float BmsAlgo::GetChargeCurrent(float maxCellVoltage)
 {
-   const float lowTempDerate = 1; //LowTempDerating();
-   const float highTempDerate = 1; //HighTempDerating(50);
-   const float cc1Current = ccCurrent[0] * lowTempDerate;
-   const uint16_t cv1Voltage = cvVoltage[0];
-   const float cc2Current = ccCurrent[1] * lowTempDerate;
-   const uint16_t cv2Voltage = cvVoltage[1];
-   const float cc3Current = ccCurrent[2] * lowTempDerate;
-   const uint16_t cv3Voltage = cvVoltage[2];
    float result;
 
    /* Here we try to mimic VWs charge curve for a warm battery.
@@ -75,18 +67,17 @@ float BmsAlgo::GetChargeCurrent(float maxCellVoltage)
     * High temp derating is done by generally capping charge current
     */
 
-   float cv1Result = (cv1Voltage - maxCellVoltage) * 3; //P-controller gain factor 3 A/mV
-   cv1Result = MIN(cv1Result, cc1Current);
+   float cv1Result = (cvVoltage[0] - maxCellVoltage) * 3; //P-controller gain factor 3 A/mV
+   cv1Result = MIN(cv1Result, ccCurrent[0]);
 
-   float cv2Result = (cv2Voltage - maxCellVoltage) * 2;
-   cv2Result = MIN(cv2Result, cc2Current);
+   float cv2Result = (cvVoltage[1] - maxCellVoltage) * 2;
+   cv2Result = MIN(cv2Result, ccCurrent[1]);
 
-   float cv3Result = (cv3Voltage - maxCellVoltage) * 2;
-   cv3Result = MIN(cv3Result, cc3Current);
+   float cv3Result = (cvVoltage[2] - maxCellVoltage) * 2;
+   cv3Result = MIN(cv3Result, ccCurrent[2]);
    cv3Result = MAX(cv3Result, 0);
 
    result = MAX(cv1Result, MAX(cv2Result, cv3Result));
-   result *= highTempDerate;
 
    return result;
 }
@@ -94,20 +85,6 @@ float BmsAlgo::GetChargeCurrent(float maxCellVoltage)
 float BmsAlgo::LimitMinimumCellVoltage(float minVoltage, float limit)
 {
    float factor = (minVoltage - limit) / 50; //start limiting 50mV before hitting minimum
-   factor = MAX(0, factor);
-   factor = MIN(1, factor);
-   return factor;
-}
-
-/** \brief Returns a derating factor to stay below maximum cell voltage
- *
- * \param maxVoltage the highest cell voltage of the entire pack
- * \return float derating factor
- *
- */
-float BmsAlgo::LimitMaximumCellVoltage(float maxVoltage, float limit)
-{
-   float factor = (limit - maxVoltage) / 10; //start limiting 10mV before hitting maximum
    factor = MAX(0, factor);
    factor = MIN(1, factor);
    return factor;
