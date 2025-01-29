@@ -26,9 +26,10 @@ extern "C"
 {
 #endif
 
-void clock_setup(void);
-void nvic_setup(void);
-void rtc_setup(void);
+void clock_setup();
+void nvic_setup();
+void rtc_setup();
+void spi_setup();
 void write_bootloader_pininit();
 
 #ifdef __cplusplus

@@ -55,6 +55,19 @@ void clock_setup(void)
    rcc_periph_clock_enable(RCC_CRC);
    rcc_periph_clock_enable(RCC_CAN1); //CAN
    rcc_periph_clock_enable(RCC_AFIO); //Needed to disable JTAG!
+   rcc_periph_clock_enable(RCC_SPI1); //Needed on V1 HW
+}
+
+void spi_setup()
+{
+   rcc_set_ppre2(RCC_CFGR_PPRE_DIV4); //slow down SPI interface
+
+   spi_init_master(SPI1, SPI_CR1_BAUDRATE_FPCLK_DIV_256, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
+                  SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_16BIT, SPI_CR1_MSBFIRST);
+   spi_enable_software_slave_management(SPI1);
+   spi_set_nss_high(SPI1);
+   gpio_set_mode(GPIOA, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_ALTFN_PUSHPULL, GPIO5 | GPIO7);
+   spi_enable(SPI1);
 }
 
 /* Some pins should never be left floating at any time

@@ -1,7 +1,7 @@
 /*
- * This file is part of the stm32-template project.
+ * This file is part of the FlyingAdcBms project.
  *
- * Copyright (C) 2020 Johannes Huebner <dev@johanneshuebner.com>
+ * Copyright (C) 2022 Johannes Huebner <dev@johanneshuebner.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,7 +39,7 @@
  */
 
  //Define a version string of your firmware here
-#define VER 0.20.B
+#define VER 0.21.B
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
@@ -47,7 +47,7 @@
    3. Display values
  */
 //Next param id (increase when adding new parameter!): 53
-//Next value Id: 2101
+//Next value Id: 2103
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
     PARAM_ENTRY(CAT_BMS,     gain,        "mV/dig",  1,      1000,   586,    3   ) \
@@ -89,6 +89,8 @@
     TESTP_ENTRY(CAT_TEST,    enable,      OFFON,     0,      1,      1,      48   ) \
     TESTP_ENTRY(CAT_TEST,    testchan,    "",        -1,     15,     -1,     49   ) \
     VALUE_ENTRY(opmode,      OPMODES,2000 ) \
+    VALUE_ENTRY(lasterr,     errorListString,2101 ) \
+    VALUE_ENTRY(testval,     "",     2102 ) \
     VALUE_ENTRY(version,     VERSTR, 2001 ) \
     VALUE_ENTRY(modaddr,     "",     2045 ) \
     VALUE_ENTRY(modnum,      "",     2046 ) \
@@ -186,7 +188,7 @@
 
 
 /***** Enum String definitions *****/
-#define OPMODES      "0=Boot, 1=GetAddr, 2=SetAddr, 3=ReqInfo, 4=RecvInfo, 5=Init, 6=Run, 7=RunBalance"
+#define OPMODES      "0=Boot, 1=GetAddr, 2=SetAddr, 3=ReqInfo, 4=RecvInfo, 5=Init, 6=SelfTest, 7=Run, 8=RunBalance, 9=Error"
 #define OFFON        "0=Off, 1=On"
 #define BALMODE      "0=Off, 1=Additive, 2=Dissipative, 3=Both"
 #define BAL          "0=None, 1=Discharge, 2=ChargePos, 3=ChargeNeg"

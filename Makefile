@@ -19,6 +19,7 @@
 
 OUT_DIR      = obj
 PREFIX		?= arm-none-eabi
+HW          ?= HWV2
 BINARY		= stm32_bms
 SIZE        = $(PREFIX)-size
 CC		      = $(PREFIX)-gcc
@@ -32,14 +33,14 @@ CFLAGS		= -Os -Wall -Wextra -Iinclude/ -Ilibopeninv/include -Ilibopencm3/include
              -fno-common -fno-builtin -pedantic -DSTM32F1 \
 				 -mcpu=cortex-m3 -mthumb -std=gnu99 -ffunction-sections -fdata-sections
 CPPFLAGS    = -Og -ggdb -Wall -Wextra -Iinclude/ -Ilibopeninv/include -Ilibopencm3/include \
-            -fno-common -std=c++11 -pedantic -DSTM32F1 -DCAN_PERIPH_SPEED=32 -DCAN_SIGNED=1 -DCAN_EXT \
+            -fno-common -std=c++11 -pedantic -DSTM32F1 -DCAN_PERIPH_SPEED=32 -DCAN_SIGNED=1 -DCAN_EXT -D$(HW) \
 				-ffunction-sections -fdata-sections -fno-builtin -fno-rtti -fno-exceptions -fno-unwind-tables -mcpu=cortex-m3 -mthumb
 LDSCRIPT	  = linker.ld
 LDFLAGS    = -Llibopencm3/lib -T$(LDSCRIPT) -march=armv7 -nostartfiles -Wl,--gc-sections,-Map,linker.map
 OBJSL		  = main.o hwinit.o stm32scheduler.o params.o  \
              my_string.o digio.o my_fp.o printf.o anain.o \
              param_save.o errormessage.o stm32_can.o canhardware.o canmap.o cansdo.o \
-             terminalcommands.o flyingadcbms.o bmsfsm.o bmsalgo.o temp_meas.o
+             terminalcommands.o flyingadcbms.o bmsfsm.o bmsalgo.o temp_meas.o selftest.o
 
 OBJS     = $(patsubst %.o,obj/%.o, $(OBJSL))
 DEPENDS := $(patsubst %.o,obj/%.d, $(OBJSL))

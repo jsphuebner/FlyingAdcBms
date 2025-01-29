@@ -21,6 +21,7 @@
 #include "digio.h"
 #include "my_math.h"
 #include "flyingadcbms.h"
+#include "selftest.h"
 
 #define IS_FIRST_THRESH       1800
 #define SDO_INDEX_PARAMS      0x2000
@@ -112,7 +113,13 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
       break;
    case INIT:
       FlyingAdcBms::Init();
-      return RUN;
+      return SELFTEST;
+   case SELFTEST:
+      if (SelfTest::GetLastResult() == SelfTest::TestsDone)
+         return RUN;
+      if (SelfTest::GetLastResult() == SelfTest::TestFailed)
+         return ERROR;
+      break;
    case RUN:
       if (ABS(Param::GetFloat(Param::idcavg)) < 0.8f)
       {
@@ -143,6 +150,8 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
          DigIo::selfena_out.Clear();
       }
       break;
+   case ERROR:
+      break; //Never leave error state
    }
    return currentState;
 }

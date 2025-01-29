@@ -17,6 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/spi.h>
 #include "flyingadcbms.h"
 #include "digio.h"
 
@@ -31,14 +32,45 @@
 #define ADC_RATE_60SPS  0x4
 #define ADC_RATE_15SPS  0x8
 
-static void SendRecvI2COverSPI(uint8_t address, bool read, uint8_t* data, uint8_t len);
+static void SendRecvI2C(uint8_t address, bool read, uint8_t* data, uint8_t len);
 
 uint8_t FlyingAdcBms::selectedChannel = 0;
 uint8_t FlyingAdcBms::previousChannel = 0;
 static bool lock = false;
 
+
+#ifdef HWV1
 void FlyingAdcBms::Init()
 {
+   uint8_t data[] = { 0x3, 0x0 };
+   SendRecvI2C(DIO_ADDR, WRITE, data, 2);
+   gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, 0);
+}
+
+//Mux control words
+#define MUX_OFF         0x0080
+#define MUX_SELECT      0x80C0
+
+void FlyingAdcBms::MuxOff()
+{
+   //Turn off mux
+   spi_xfer(SPI1, MUX_OFF);
+   SetBalancing(BAL_OFF);
+   gpio_clear(GPIOB, GPIO0);
+}
+
+void FlyingAdcBms::SelectChannel(uint8_t channel)
+{
+   gpio_set(GPIOB, GPIO0);
+   selectedChannel = channel;
+   //Select MUX channel with deadtime insertion
+   spi_xfer(SPI1, MUX_SELECT | channel);
+}
+#else
+void FlyingAdcBms::Init()
+{
+   uint8_t data[2] = { 0x3 /* pin mode register */, 0x0 /* All pins as output */};
+   SendRecvI2C(DIO_ADDR, WRITE, data, 2);
    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, 255);
 }
 
@@ -51,51 +83,44 @@ void FlyingAdcBms::MuxOff()
 
 void FlyingAdcBms::SelectChannel(uint8_t channel)
 {
-   uint8_t data[2];
-
-   selectedChannel = channel;
    //Turn off all channels
    gpio_clear(GPIOB, 255);
 
-   //This creates some delay and should be done anyway.
-   data[0] = 0x3; //pin mode register
-   data[1] = 0x0; //All pins as output
-   SendRecvI2COverSPI(DIO_ADDR, WRITE, data, 2);
+   if (channel > 15) return;
 
-   if (channel == 15) //special case
-   {
-      //Turn on G16 via GPIOB3 and G15 via Decoder
-      gpio_set(GPIOB, GPIO3 | GPIO4 | GPIO5 | GPIO6 | GPIO7);
-   }
-   else
-   {
-      //Example Chan8: turn on G8 (=even mux word 4) and G9 (odd mux word 4)
-      //Example Chan9: turn on G10 (=even mux word 5) and G9 (odd mux word 4)
-      uint8_t evenMuxWord = (channel / 2) + (channel & 1);
-      uint8_t oddMuxWord = (channel / 2) << 4;
-      gpio_set(GPIOB, evenMuxWord | oddMuxWord | GPIO7);
-   }
+   selectedChannel = channel;
+
+   //This creates some delay and should be done anyway.
+   uint8_t data[2] = { 0x3 /* pin mode register */, 0x0 /* All pins as output */};
+   SendRecvI2C(DIO_ADDR, WRITE, data, 2);
+
+   //Example Chan8:  turn on G8 (=even mux word 4) and G9 (odd mux word 4)
+   //Example Chan9:  turn on G10 (=even mux word 5) and G9 (odd mux word 4)
+   //Example Chan15: turn on G16 via GPIOB3 (=even mux word 8) and G15 via Decoder (odd mux word 7)
+   uint8_t evenMuxWord = (channel / 2) + (channel & 1);
+   uint8_t oddMuxWord = (channel / 2) << 4;
+   gpio_set(GPIOB, evenMuxWord | oddMuxWord | GPIO7);
+
    //More delay
    SetBalancing(BAL_OFF);
 }
+#endif // V1HW
 
 void FlyingAdcBms::StartAdc()
 {
    uint8_t byte = ADC_START | ADC_RATE_60SPS; //Start in manual mode with 14 bit/60 SPS resolution
-   SendRecvI2COverSPI(ADC_ADDR, WRITE, &byte, 1);
+   SendRecvI2C(ADC_ADDR, WRITE, &byte, 1);
    previousChannel = selectedChannel; //now we can switch the mux and still read the correct result
 }
 
-float FlyingAdcBms::GetResult(float gain)
+float FlyingAdcBms::GetResult()
 {
    uint8_t data[3];
-   SendRecvI2COverSPI(ADC_ADDR, READ, data, 3);
+   SendRecvI2C(ADC_ADDR, READ, data, 3);
    int32_t adc = (((int16_t)(data[0] << 8)) + data[1]);
    float result = adc;
    //Odd channels are connected to ADC with reversed polarity
    if (previousChannel & 1) result = -result;
-
-   result *= gain;
 
    return result;
 }
@@ -122,7 +147,7 @@ FlyingAdcBms::BalanceStatus FlyingAdcBms::SetBalancing(BalanceCommand cmd)
       data[1] = selectedChannel & 1 ? 0xC : 0x3;
       stt = selectedChannel & 1 ? STT_CHARGENEG : STT_CHARGEPOS;
    }
-   SendRecvI2COverSPI(DIO_ADDR, WRITE, data, 2);
+   SendRecvI2C(DIO_ADDR, WRITE, data, 2);
 
    return stt;
 }
@@ -182,7 +207,7 @@ static void BitBangI2CStop()
    for (volatile int i = 0; i < I2C_DELAY; i++);
 }
 
-static void SendRecvI2COverSPI(uint8_t address, bool read, uint8_t* data, uint8_t len)
+static void SendRecvI2C(uint8_t address, bool read, uint8_t* data, uint8_t len)
 {
    if (lock) return;
 

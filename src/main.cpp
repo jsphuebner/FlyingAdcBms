@@ -1,7 +1,7 @@
 /*
- * This file is part of the stm32-template project.
+ * This file is part of the FlyingAdcBms project.
  *
- * Copyright (C) 2020 Johannes Huebner <dev@johanneshuebner.com>
+ * Copyright (C) 2025 Johannes Huebner <dev@johanneshuebner.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,6 +41,7 @@
 #include "bmsfsm.h"
 #include "bmsalgo.h"
 #include "temp_meas.h"
+#include "selftest.h"
 
 #define PRINT_JSON 0
 #define NO_TEMP    128
@@ -193,7 +194,7 @@ static void ReadAdc()
          gain *= 1 + Param::GetFloat(Param::correction15) / 1000000.0f;
 
       //Read ADC result before mux change
-      float udc = FlyingAdcBms::GetResult(gain / 1000.0f);
+      float udc = FlyingAdcBms::GetResult() * (gain / 1000.0f);
 
       Param::SetFloat((Param::PARAM_NUM)(Param::u0 + chan), udc);
 
@@ -217,7 +218,6 @@ static void ReadAdc()
       }
 
       FlyingAdcBms::SelectChannel(chan);
-
       FlyingAdcBms::StartAdc();
    }
 }
@@ -233,7 +233,7 @@ static void TestAdc(int chan)
    else if (chan == 15)
       gain *= 1 + Param::GetFloat(Param::correction15) / 1000000.0f;
 
-   float udc = FlyingAdcBms::GetResult(gain / 1000.0f);
+   float udc = FlyingAdcBms::GetResult() * (gain / 1000.0f);;
    FlyingAdcBms::SelectChannel(chan);
    FlyingAdcBms::StartAdc();
    Param::SetFloat((Param::PARAM_NUM)(Param::u0 + chan), udc);
@@ -321,13 +321,28 @@ static void Ms100Task(void)
    canMapInternal->SendAll();
 }
 
+static void RunSelfTest()
+{
+   static int test = 0;
+   if (SelfTest::GetLastResult() == SelfTest::TestFailed) return; //do not call anymore tests
+   SelfTest::TestResult result = SelfTest::RunTest(test);
+
+   if (result == SelfTest::TestFailed)
+   {
+      ErrorMessage::Post((ERROR_MESSAGE_NUM)(test + 1));
+      Param::SetInt(Param::lasterr, test + 1);
+   }
+}
+
 /** \brief This task runs the BMS voltage sensing */
 static void Ms25Task(void)
 {
    int opmode = Param::GetInt(Param::opmode);
    int testchan = Param::GetInt(Param::testchan);
 
-   if (testchan >= 0)
+   if (opmode == BmsFsm::SELFTEST)
+      RunSelfTest();
+   else if (testchan >= 0)
       TestAdc(testchan);
    else if (Param::GetBool(Param::enable) && (opmode == BmsFsm::RUN || opmode == BmsFsm::RUNBALANCE))
       ReadAdc();
@@ -426,6 +441,11 @@ extern "C" int main(void)
    //rtc_setup();
    ANA_IN_CONFIGURE(ANA_IN_LIST);
    DIG_IO_CONFIGURE(DIG_IO_LIST);
+   #ifdef HWV1
+   spi_setup(); //in case we use V1 hardware
+   DigIo::led_out.Configure(GPIOB, GPIO1, PinMode::OUTPUT);
+   #endif // HWV1
+   DigIo::selfena_out.Set();
    AnaIn::Start(); //Starts background ADC conversion via DMA
    write_bootloader_pininit(); //Instructs boot loader to initialize certain pins
    //JTAG must be turned off as it steals PB4
@@ -445,7 +465,7 @@ extern "C" int main(void)
    CanSdo sdo(&c, &cme);
 
    BmsFsm fsm(&cmi, &sdo);
-   c.AddCallback(&fsm);
+   //c.AddCallback(&fsm);
    bmsFsm = &fsm;
 
    TerminalCommands::SetCanMap(canMapExternal);
@@ -456,8 +476,6 @@ extern "C" int main(void)
 
    Param::SetInt(Param::version, 4);
    Param::Change(Param::PARAM_LAST); //Call callback once for general parameter propagation
-
-   DigIo::selfena_out.Set();
 
    if (BKP_DR2 != 0)
       Param::SetFloat(Param::soh, (float)BKP_DR2 / 100.0f);
