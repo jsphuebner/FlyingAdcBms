@@ -88,10 +88,10 @@
     PARAM_ENTRY(CAT_COMM,    sdobase,     "",        0,      63,     10,     11  ) \
     TESTP_ENTRY(CAT_TEST,    enable,      OFFON,     0,      1,      1,      48   ) \
     TESTP_ENTRY(CAT_TEST,    testchan,    "",        -1,     15,     -1,     49   ) \
+    VALUE_ENTRY(version,     VERSTR, 2001 ) \
     VALUE_ENTRY(opmode,      OPMODES,2000 ) \
     VALUE_ENTRY(lasterr,     errorListString,2101 ) \
-    VALUE_ENTRY(testval,     "",     2102 ) \
-    VALUE_ENTRY(version,     VERSTR, 2001 ) \
+    VALUE_ENTRY(errchan,     "",     2102 ) \
     VALUE_ENTRY(modaddr,     "",     2045 ) \
     VALUE_ENTRY(modnum,      "",     2046 ) \
     VALUE_ENTRY(totalcells,  "",     2074 ) \
@@ -188,7 +188,7 @@
 
 
 /***** Enum String definitions *****/
-#define OPMODES      "0=Boot, 1=GetAddr, 2=SetAddr, 3=ReqInfo, 4=RecvInfo, 5=Init, 6=SelfTest, 7=Run, 8=RunBalance, 9=Error"
+#define OPMODES      "0=Boot, 1=GetAddr, 2=SetAddr, 3=ReqInfo, 4=RecvInfo, 5=Init, 6=SelfTest, 7=Run, 8=Idle, 9=Error"
 #define OFFON        "0=Off, 1=On"
 #define BALMODE      "0=Off, 1=Additive, 2=Dissipative, 3=Both"
 #define BAL          "0=None, 1=Discharge, 2=ChargePos, 3=ChargeNeg"

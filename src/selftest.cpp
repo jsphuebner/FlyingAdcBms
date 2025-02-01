@@ -18,7 +18,6 @@
  */
 #include "selftest.h"
 #include "flyingadcbms.h"
-#include "params.h"
 #include "my_math.h"
 
 SelfTest::TestFunction SelfTest::testFunctions[] = {
@@ -26,6 +25,8 @@ SelfTest::TestFunction SelfTest::testFunctions[] = {
 };
 
 int SelfTest::cycleCounter = 0;
+int SelfTest::numChannels = 16;
+int SelfTest::errChannel = 0;
 SelfTest::TestResult SelfTest::lastResult = SelfTest::TestOngoing;
 
 /** \brief Runs a given self test
@@ -67,7 +68,6 @@ SelfTest::TestResult SelfTest::RunTestMuxOff()
    else if (cycleCounter == 1) {
       int adc = FlyingAdcBms::GetResult();
       adc = ABS(adc);
-      Param::SetInt(Param::testval, adc);
 
       if (adc < 5) //We expect no voltage on the ADC
          return TestSuccess;
@@ -91,7 +91,6 @@ SelfTest::TestResult SelfTest::RunTestBalancer()
    }
    else if (cycleCounter == 1) {
       int adc = FlyingAdcBms::GetResult();
-      Param::SetInt(Param::testval, adc);
 
       if (adc < 8190) //We expect the ADC to saturate
          return TestFailed;
@@ -105,7 +104,6 @@ SelfTest::TestResult SelfTest::RunTestBalancer()
    else if (cycleCounter == 3) {
       int adc = FlyingAdcBms::GetResult();
       FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_OFF);
-      Param::SetInt(Param::testval, adc);
 
       if (adc < 8190) //We expect the ADC to saturate
          return TestFailed;
@@ -119,30 +117,33 @@ SelfTest::TestResult SelfTest::TestCellConnection()
 {
    static bool overVoltage = false;
    static bool polarityCheckComplete = false;
+   int channel = cycleCounter / 2;
 
    if (overVoltage) return TestFailed; //make this look like a separate test
    if (polarityCheckComplete) return TestSuccess;
 
-   if (cycleCounter & 1)
+   if (cycleCounter & 1) //on odd cycles measure, on even cycles switch mux
    {
       int adc = FlyingAdcBms::GetResult();
       FlyingAdcBms::MuxOff();
-      Param::SetInt(Param::testval, (adc << 8) | (cycleCounter >> 1));
 
-      if (adc < 0)
+      if (adc < -1000) {
+         errChannel = channel;
          return TestFailed;
+      }
       if (adc > 7500) {
          overVoltage = true;
+         errChannel = channel;
          return TestSuccess; //report polarity check as good, but over voltage check as failed on the next call
       }
-      if ((cycleCounter / 2) == (Param::GetInt(Param::numchan) - 1)) {
+      if (channel == (numChannels - 1)) {
          polarityCheckComplete = true;
          return TestSuccess;
       }
    }
    else
    {
-      FlyingAdcBms::SelectChannel(cycleCounter / 2);
+      FlyingAdcBms::SelectChannel(channel);
       FlyingAdcBms::StartAdc();
    }
    return TestOngoing;

@@ -120,7 +120,7 @@ static void ReadAdc()
    static uint8_t chan = 0, balanceCycles = 0;
    static float sum = 0, min, max, avg;
    int balMode = Param::GetInt(Param::balmode);
-   bool balance = Param::GetInt(Param::opmode) == BmsFsm::RUNBALANCE && Param::GetFloat(Param::uavg) > Param::GetFloat(Param::ubalance) && BAL_OFF != balMode;
+   bool balance = Param::GetInt(Param::opmode) == BmsFsm::IDLE && Param::GetFloat(Param::uavg) > Param::GetFloat(Param::ubalance) && BAL_OFF != balMode;
    FlyingAdcBms::BalanceStatus bstt;
 
    if (balance)
@@ -244,7 +244,7 @@ static void CalculateSocSoh(BmsFsm::bmsstate stt)
    static float estimatedSoc = 0, estimatedSocAtValidSoh = -1;
    float asDiff = Param::GetFloat(Param::chargein) - Param::GetFloat(Param::chargeout);
 
-   if (stt == BmsFsm::RUNBALANCE && Param::GetFloat(Param::idc) < 0.8f)
+   if (stt == BmsFsm::IDLE && Param::GetFloat(Param::idc) < 0.8f)
    {
       float lastSoh = Param::GetFloat(Param::soh);
       estimatedSoc = BmsAlgo::EstimateSocFromVoltage(Param::GetFloat(Param::umin));
@@ -297,12 +297,25 @@ static void ReadTemperatures()
 
 static void Ms100Task(void)
 {
+   static uint8_t ledDivider = 0;
    //The boot loader enables the watchdog, we have to reset it
    //at least every 2s or otherwise the controller is hard reset.
    iwdg_reset();
    float cpuLoad = scheduler->GetCpuLoad();
    Param::SetFloat(Param::cpuload, cpuLoad / 10);
-   DigIo::led_out.Toggle();
+
+   if (Param::GetInt(Param::opmode) != BmsFsm::ERROR)
+      DigIo::led_out.Toggle();
+   else //blink slower when an error is detected
+   {
+      if (ledDivider == 0)
+      {
+         DigIo::led_out.Toggle();
+         ledDivider = 4;
+      }
+      else
+         ledDivider--;
+   }
 
    BmsFsm::bmsstate stt = bmsFsm->Run((BmsFsm::bmsstate)Param::GetInt(Param::opmode));
    ReadTemperatures();
@@ -331,6 +344,7 @@ static void RunSelfTest()
    {
       ErrorMessage::Post((ERROR_MESSAGE_NUM)(test + 1));
       Param::SetInt(Param::lasterr, test + 1);
+      Param::SetInt(Param::errchan, SelfTest::GetErrorChannel());
    }
 }
 
@@ -344,7 +358,7 @@ static void Ms25Task(void)
       RunSelfTest();
    else if (testchan >= 0)
       TestAdc(testchan);
-   else if (Param::GetBool(Param::enable) && (opmode == BmsFsm::RUN || opmode == BmsFsm::RUNBALANCE))
+   else if (Param::GetBool(Param::enable) && (opmode == BmsFsm::RUN || opmode == BmsFsm::IDLE))
       ReadAdc();
    else
       FlyingAdcBms::MuxOff();
@@ -415,6 +429,7 @@ void Param::Change(Param::PARAM_NUM paramNum)
    {
    default:
       BmsAlgo::SetNominalCapacity(Param::GetFloat(Param::nomcap));
+      SelfTest::SetNumChannels(Param::GetInt(Param::numchan));
 
       for (int i = 0; i < 11; i++)
       {

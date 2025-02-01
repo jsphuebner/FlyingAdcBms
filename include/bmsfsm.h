@@ -28,7 +28,7 @@
 class BmsFsm: public CanCallback
 {
    public:
-      enum bmsstate { BOOT, GET_ADDR, SET_ADDR, REQ_INFO, RECV_INFO, INIT, SELFTEST, RUN, RUNBALANCE, ERROR };
+      enum bmsstate { BOOT, GET_ADDR, SET_ADDR, REQ_INFO, RECV_INFO, INIT, SELFTEST, RUN, IDLE, ERROR };
 
       BmsFsm(CanMap* cm, CanSdo* cs);
       bmsstate Run(bmsstate currentState);

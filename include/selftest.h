@@ -26,17 +26,21 @@ class SelfTest
       enum TestResult { TestOngoing, TestSuccess, TestFailed, TestsDone };
       static TestResult RunTest(int& testStep);
       static TestResult GetLastResult() { return lastResult; }
+      static void SetNumChannels(int c) { numChannels = c; }
+      static int GetErrorChannel() { return errChannel; }
 
    private:
       typedef TestResult (*TestFunction)(void);
 
       static TestResult RunTestMuxOff();
       static TestResult RunTestBalancer();
-      static TestResult NoTest();
       static TestResult TestCellConnection();
+      static TestResult NoTest();
 
       static TestFunction testFunctions[];
       static int cycleCounter;
+      static int numChannels;
+      static int errChannel;
       static TestResult lastResult;
 };
 

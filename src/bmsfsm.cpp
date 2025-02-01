@@ -118,7 +118,10 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
       if (SelfTest::GetLastResult() == SelfTest::TestsDone)
          return RUN;
       if (SelfTest::GetLastResult() == SelfTest::TestFailed)
+      {
+         Param::SetInt(Param::enable, 0);
          return ERROR;
+      }
       break;
    case RUN:
       if (ABS(Param::GetFloat(Param::idcavg)) < 0.8f)
@@ -128,7 +131,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
          if (cycles > ((uint32_t)Param::GetInt(Param::idlewait) * 10))
          {
             cycles = 0;
-            return RUNBALANCE;
+            return IDLE;
          }
       }
       else
@@ -136,7 +139,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
          cycles = 0;
       }
       break;
-   case RUNBALANCE:
+   case IDLE:
       cycles++;
 
       if (ABS(Param::GetFloat(Param::idcavg)) > 0.8f)
@@ -151,6 +154,8 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
       }
       break;
    case ERROR:
+      if (Param::GetBool(Param::enable))
+         return RUN;
       break; //Never leave error state
    }
    return currentState;
