@@ -56,6 +56,7 @@
 		<Unit filename="include/anain_prj.h" />
 		<Unit filename="include/bmsalgo.h" />
 		<Unit filename="include/bmsfsm.h" />
+		<Unit filename="include/bmsio.h" />
 		<Unit filename="include/digio_prj.h" />
 		<Unit filename="include/errormessage_prj.h" />
 		<Unit filename="include/flyingadcbms.h" />
@@ -116,6 +117,7 @@
 		<Unit filename="linker.ld" />
 		<Unit filename="src/bmsalgo.cpp" />
 		<Unit filename="src/bmsfsm.cpp" />
+		<Unit filename="src/bmsio.cpp" />
 		<Unit filename="src/flyingadcbms.cpp" />
 		<Unit filename="src/hwinit.cpp" />
 		<Unit filename="src/main.cpp" />

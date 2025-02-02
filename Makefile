@@ -40,7 +40,7 @@ LDFLAGS    = -Llibopencm3/lib -T$(LDSCRIPT) -march=armv7 -nostartfiles -Wl,--gc-
 OBJSL		  = main.o hwinit.o stm32scheduler.o params.o  \
              my_string.o digio.o my_fp.o printf.o anain.o \
              param_save.o errormessage.o stm32_can.o canhardware.o canmap.o cansdo.o \
-             terminalcommands.o flyingadcbms.o bmsfsm.o bmsalgo.o temp_meas.o selftest.o
+             terminalcommands.o flyingadcbms.o bmsfsm.o bmsalgo.o bmsio.o temp_meas.o selftest.o
 
 OBJS     = $(patsubst %.o,obj/%.o, $(OBJSL))
 DEPENDS := $(patsubst %.o,obj/%.d, $(OBJSL))
