@@ -39,15 +39,15 @@
  */
 
  //Define a version string of your firmware here
-#define VER 0.21.B
+#define VER 0.22.B
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 53
-//Next value Id: 2103
+//Next param id (increase when adding new parameter!): 54
+//Next value Id: 2104
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
     PARAM_ENTRY(CAT_BMS,     gain,        "mV/dig",  1,      1000,   586,    3   ) \
@@ -78,6 +78,7 @@
     PARAM_ENTRY(CAT_BAT,     ucell80soc,  "mV",      2000,   4500,   4000,   25  ) \
     PARAM_ENTRY(CAT_BAT,     ucell90soc,  "mV",      2000,   4500,   4100,   26  ) \
     PARAM_ENTRY(CAT_BAT,     ucell100soc, "mV",      2000,   4500,   4200,   27  ) \
+    PARAM_ENTRY(CAT_BAT,     sohpreset,   "%",       10,     100,    100,    53  ) \
     PARAM_ENTRY(CAT_SENS,    idcgain,     "dig/A",  -1000,   1000,   10,     6   ) \
     PARAM_ENTRY(CAT_SENS,    idcofs,      "dig",    -4095,   4095,   0,      7   ) \
     PARAM_ENTRY(CAT_SENS,    idcmode,     IDCMODES,  0,      3,      0,      8   ) \
@@ -96,6 +97,7 @@
     VALUE_ENTRY(modnum,      "",     2046 ) \
     VALUE_ENTRY(totalcells,  "",     2074 ) \
     VALUE_ENTRY(counter,     "",     2076 ) \
+    VALUE_ENTRY(uptime,      "s",    2103 ) \
     VALUE_ENTRY(chargein,    "As",   2040 ) \
     VALUE_ENTRY(chargeout,   "As",   2041 ) \
     VALUE_ENTRY(soc,         "%",    2071 ) \

@@ -38,6 +38,33 @@ BmsFsm::BmsFsm(CanMap* cm, CanSdo* cs)
    recvIndex = 0;
 }
 
+/**
+ * @brief Executes the state machine for the Battery Management System (BMS).
+ *
+ * This function processes the current state of the BMS finite state machine (FSM)
+ * and transitions to the next state based on the defined logic. The function handles
+ * various states including initialization, address setting, information request,
+ * and operational states. It also manages transitions based on conditions such as
+ * node identification, self-test results, and current measurements.
+ *
+ * The states handled by this function include:
+ * - BOOT: Initializes the system as main or sub module.
+ * - GET_ADDR: Retrieves the address of the node.
+ * - SET_ADDR: Sets the address of the next node and prepares for information requests.
+ * - REQ_INFO: Requests information from the sub modules.
+ * - RECV_INFO: Receives and processes information from sub modules.
+ * - INIT: Initializes the BMS hardware.
+ * - SELFTEST: Performs self-tests and checks results.
+ * - RUN: Operates the BMS and monitors current.
+ * - IDLE: Enters idle mode after a period of inactivity.
+ * - ERROR: Handles error states and checks for re-enabling.
+ *
+ * @param currentState The current state of the BMS FSM, represented as a
+ *                     BmsFsm::bmsstate enum value.
+ *
+ * @return The next state of the BMS FSM, represented as a
+ *         BmsFsm::bmsstate enum value, based on the state transition logic.
+ */
 BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
 {
    uint32_t data[2] = { 0 };
@@ -151,12 +178,13 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
       if (cycles > 72000)
       {
          DigIo::selfena_out.Clear();
+         DigIo::nextena_out.Clear();
       }
       break;
    case ERROR:
       if (Param::GetBool(Param::enable))
          return RUN;
-      break; //Never leave error state
+      break;
    }
    return currentState;
 }

@@ -40,66 +40,15 @@
 #include "flyingadcbms.h"
 #include "bmsfsm.h"
 #include "bmsalgo.h"
-#include "temp_meas.h"
+#include "bmsio.h"
 #include "selftest.h"
 
 #define PRINT_JSON 0
-#define NO_TEMP    128
 
 static Stm32Scheduler* scheduler;
 static CanMap* canMapExternal;
 static CanMap* canMapInternal;
 static BmsFsm* bmsFsm;
-
-static void Accumulate(float sum, float min, float max, float avg)
-{
-   if (bmsFsm->IsFirst())
-   {
-      Param::SetFloat(Param::uavg0, avg);
-      Param::SetFloat(Param::umin0, min);
-      Param::SetFloat(Param::umax0, max);
-
-      float totalSum = sum, totalMin = min, totalMax = max;
-      //If we are the first module accumulate our values with those from the sub modules
-      for (int i = 1; i < bmsFsm->GetNumberOfModules(); i++)
-      {
-         //Here we undo the local average calculation on the module to calculate the substrings total voltage
-         totalSum += Param::GetFloat(bmsFsm->GetDataItem(Param::uavg0, i)) * bmsFsm->GetCellsOfModule(i);
-         totalMin = MIN(totalMin, Param::GetFloat(bmsFsm->GetDataItem(Param::umin0, i)));
-         totalMax = MAX(totalMax, Param::GetFloat(bmsFsm->GetDataItem(Param::umax0, i)));
-      }
-
-      float tempmin = NO_TEMP, tempmax = -40;
-
-      for (int i = 0; i < bmsFsm->GetNumberOfModules(); i++)
-      {
-         float tempmin0 = Param::GetFloat(bmsFsm->GetDataItem(Param::tempmin0, i));
-         float tempmax0 = Param::GetFloat(bmsFsm->GetDataItem(Param::tempmax0, i));
-
-         if (tempmin0 < NO_TEMP)
-         {
-            tempmin = MIN(tempmin, tempmin0);
-            tempmax = MAX(tempmax, tempmax0);
-         }
-      }
-
-      Param::SetFloat(Param::umin, totalMin);
-      Param::SetFloat(Param::umax, totalMax);
-      Param::SetFloat(Param::uavg, totalSum / Param::GetInt(Param::totalcells));
-      Param::SetFloat(Param::udelta, totalMax - totalMin);
-      Param::SetFloat(Param::utotal, totalSum);
-      Param::SetFloat(Param::tempmin, tempmin);
-      Param::SetFloat(Param::tempmax, tempmax);
-   }
-   else //if we are a sub module write averages straight to data module
-   {
-      Param::SetFloat(Param::utotal, sum);
-      Param::SetFloat(Param::uavg0, avg);
-      Param::SetFloat(Param::umin0, min);
-      Param::SetFloat(Param::umax0, max);
-      Param::SetFloat(Param::udelta, max - min);
-   }
-}
 
 static void CalculateCurrentLimits()
 {
@@ -114,185 +63,63 @@ static void CalculateCurrentLimits()
    Param::SetFloat(Param::dischargelim, dischargeCurrentLimit);
 }
 
-static void ReadAdc()
+static void CalculateSocSoh(BmsFsm::bmsstate stt, BmsFsm::bmsstate laststt)
 {
-   int totalBalanceCycles = 30;
-   static uint8_t chan = 0, balanceCycles = 0;
-   static float sum = 0, min, max, avg;
-   int balMode = Param::GetInt(Param::balmode);
-   bool balance = Param::GetInt(Param::opmode) == BmsFsm::IDLE && Param::GetFloat(Param::uavg) > Param::GetFloat(Param::ubalance) && BAL_OFF != balMode;
-   FlyingAdcBms::BalanceStatus bstt;
-
-   if (balance)
-   {
-      if (balanceCycles == 0)
-      {
-         balanceCycles = totalBalanceCycles; //this leads to switching to next channel below
-      }
-      else
-      {
-         balanceCycles--;
-      }
-
-      if (balanceCycles > 0 && balanceCycles < (totalBalanceCycles - 1))
-      {
-         float udc = Param::GetFloat((Param::PARAM_NUM)(Param::u0 + chan));
-         float balanceTarget = 0;
-
-         switch (balMode)
-         {
-         case BAL_ADD: //maximum cell voltage is target when only adding
-            balanceTarget = Param::GetFloat(Param::umax);
-            break;
-         case BAL_DIS: //minimum cell voltage is target when only dissipating
-            balanceTarget = Param::GetFloat(Param::umin);
-            break;
-         case BAL_BOTH: //average cell voltage is target when dissipating and adding
-            balanceTarget = Param::GetFloat(Param::uavg);
-            break;
-         default: //not balancing
-            break;
-         }
-
-         if (udc < (balanceTarget - 3) && (balMode & BAL_ADD))
-         {
-            bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_CHARGE);
-         }
-         else if (udc > (balanceTarget + 1) && (balMode & BAL_DIS))
-         {
-            bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_DISCHARGE);
-         }
-         else
-         {
-            bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_OFF);
-            balanceCycles = 0;
-         }
-         Param::SetInt((Param::PARAM_NUM)(Param::u0cmd + chan), bstt);
-      }
-      else
-      {
-         FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_OFF);
-      }
-   }
-   else
-   {
-      balanceCycles = totalBalanceCycles;
-      bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_OFF);
-      Param::SetInt((Param::PARAM_NUM)(Param::u0cmd + chan), bstt);
-   }
-
-   //Read cell voltage when balancing is turned off
-   if (balanceCycles == totalBalanceCycles)
-   {
-      float gain = Param::GetFloat(Param::gain);
-
-      if (chan == 0)
-         gain *= 1 + Param::GetFloat(Param::correction0) / 1000000.0f;
-      else if (chan == 1)
-         gain *= 1 + Param::GetFloat(Param::correction1) / 1000000.0f;
-      else if (chan == 15)
-         gain *= 1 + Param::GetFloat(Param::correction15) / 1000000.0f;
-
-      //Read ADC result before mux change
-      float udc = FlyingAdcBms::GetResult() * (gain / 1000.0f);
-
-      Param::SetFloat((Param::PARAM_NUM)(Param::u0 + chan), udc);
-
-      min = MIN(min, udc);
-      max = MAX(max, udc);
-      sum += udc;
-
-      if ((chan + 1) >= Param::GetInt(Param::numchan))
-      {
-         chan = 0;
-         avg = sum / Param::GetInt(Param::numchan);
-         Accumulate(sum, min, max, avg);
-
-         min = 8000;
-         max = 0;
-         sum = 0;
-      }
-      else
-      {
-         chan++;
-      }
-
-      FlyingAdcBms::SelectChannel(chan);
-      FlyingAdcBms::StartAdc();
-   }
-}
-
-static void TestAdc(int chan)
-{
-   float gain = Param::GetFloat(Param::gain);
-
-   if (chan == 0)
-      gain *= 1 + Param::GetFloat(Param::correction0) / 1000000.0f;
-   else if (chan == 1)
-      gain *= 1 + Param::GetFloat(Param::correction1) / 1000000.0f;
-   else if (chan == 15)
-      gain *= 1 + Param::GetFloat(Param::correction15) / 1000000.0f;
-
-   float udc = FlyingAdcBms::GetResult() * (gain / 1000.0f);;
-   FlyingAdcBms::SelectChannel(chan);
-   FlyingAdcBms::StartAdc();
-   Param::SetFloat((Param::PARAM_NUM)(Param::u0 + chan), udc);
-}
-
-static void CalculateSocSoh(BmsFsm::bmsstate stt)
-{
-   static float estimatedSoc = 0, estimatedSocAtValidSoh = -1;
+   static float estimatedSoc = 0, estimatedSocAtValidSoh = -1, asDiffAfterEstimate = 0, soh = 0;
    float asDiff = Param::GetFloat(Param::chargein) - Param::GetFloat(Param::chargeout);
 
+   if (estimatedSoc == 0)
+   {
+      estimatedSoc = Param::GetFloat(Param::soc);
+      estimatedSocAtValidSoh = estimatedSoc;
+   }
+
+   /* if we change over from IDLE to RUN we have to stop all estimation processes
+      because there is now current through the battery again, skewing open voltage readings.
+      So the estimations do not get any better at this point and we store the results */
+   if (laststt == BmsFsm::IDLE && stt == BmsFsm::RUN)
+   {
+      /* Remember the Ampere Seconds at the point of the last estimation
+         in order to be prepared for the next estimation */
+      asDiffAfterEstimate = asDiff;
+
+      /* If the SoC difference was large enough we have a valid SoH */
+      if (soh > 0)
+      {
+         float lastSoh = (float)BKP_DR2 / 100.0f;
+         //Don't just overwrite the existing SoH but average it to the existing SoH with a slow IIR filter
+         soh = IIRFILTERF(lastSoh, soh, 10);
+         //Store in NVRAM
+         BKP_DR2 = (uint16_t)(soh * 100);
+         Param::SetFloat(Param::soh, soh);
+         Param::SetFloat(Param::sohpreset, soh);
+         /* Remember SoC at the point of this estimation
+            in order to be prepared for the next estimation */
+         estimatedSocAtValidSoh = estimatedSoc;
+         BmsAlgo::SetNominalCapacity(Param::GetFloat(Param::nomcap) * soh / 100.0f);
+      }
+   }
+
+   /* IDLE state means we haven't seen any current for some (configurable) time
+      so cell voltage is approaching the true open circuit voltage */
    if (stt == BmsFsm::IDLE && Param::GetFloat(Param::idc) < 0.8f)
    {
-      float lastSoh = Param::GetFloat(Param::soh);
       estimatedSoc = BmsAlgo::EstimateSocFromVoltage(Param::GetFloat(Param::umin));
       Param::SetFloat(Param::soc, estimatedSoc);
+      //Store estimated SoC in NVRAM
+      BKP_DR1 = (uint16_t)(estimatedSoc * 100);
 
-      float soh = BmsAlgo::CalculateSoH(estimatedSocAtValidSoh, estimatedSoc, asDiff);
+      soh = BmsAlgo::CalculateSoH(estimatedSocAtValidSoh, estimatedSoc, asDiff - asDiffAfterEstimate);
 
       if (estimatedSocAtValidSoh < 0)
          estimatedSocAtValidSoh = estimatedSoc;
-
-      if (soh > 0)
-      {
-         soh = IIRFILTERF(lastSoh, soh, 10);
-         BKP_DR2 = (uint16_t)(soh * 100);
-         Param::SetFloat(Param::soh, soh);
-         estimatedSocAtValidSoh = estimatedSoc;
-         Param::SetInt(Param::chargein, 0);
-         Param::SetInt(Param::chargeout, 0);
-      }
    }
    else
    {
-      float soc = BmsAlgo::CalculateSocFromIntegration(estimatedSoc, asDiff);
+      float soc = BmsAlgo::CalculateSocFromIntegration(estimatedSoc, asDiff - asDiffAfterEstimate);
       Param::SetFloat(Param::soc, soc);
+      BKP_DR1 = (uint16_t)(soc * 100);
    }
-}
-
-static void ReadTemperatures()
-{
-   int sensor = Param::GetInt(Param::tempsns);
-   int nomRes = Param::GetInt(Param::tempres);
-   int beta = Param::GetInt(Param::tempbeta);
-   float temp1 = NO_TEMP, temp2 = NO_TEMP, tempmin = NO_TEMP, tempmax = NO_TEMP;
-
-   if (sensor & 1)
-      tempmin = tempmax = temp1 = TempMeas::AdcToTemperature(AnaIn::temp1.Get(), nomRes, beta);
-
-   if (sensor & 2)
-      tempmin = tempmax = temp2 = TempMeas::AdcToTemperature(AnaIn::temp2.Get(), nomRes, beta);
-
-   if (sensor == 3) //two sensors, calculate min and max
-   {
-      tempmin = MIN(temp1, temp2);
-      tempmax = MAX(temp1, temp2);
-   }
-
-   Param::SetFloat(Param::tempmin0, tempmin);
-   Param::SetFloat(Param::tempmax0, tempmax);
 }
 
 static void Ms100Task(void)
@@ -317,18 +144,20 @@ static void Ms100Task(void)
          ledDivider--;
    }
 
-   BmsFsm::bmsstate stt = bmsFsm->Run((BmsFsm::bmsstate)Param::GetInt(Param::opmode));
-   ReadTemperatures();
+   BmsFsm::bmsstate laststt = (BmsFsm::bmsstate)Param::GetInt(Param::opmode);
+   BmsFsm::bmsstate stt = bmsFsm->Run(laststt);
+   BmsIO::ReadTemperatures();
 
    if (bmsFsm->IsFirst())
    {
       CalculateCurrentLimits();
-      CalculateSocSoh(stt);
+      CalculateSocSoh(stt, laststt);
    }
 
    Param::SetInt(Param::opmode, stt);
    //4 bit circular counter for alive indication
    Param::SetInt(Param::counter, (Param::GetInt(Param::counter) + 1) & 0xF);
+   Param::SetInt(Param::uptime, rtc_get_counter_val());
 
    canMapExternal->SendAll();
    canMapInternal->SendAll();
@@ -349,7 +178,7 @@ static void RunSelfTest()
 }
 
 /** \brief This task runs the BMS voltage sensing */
-static void Ms25Task(void)
+static void ReadCellVoltages(void)
 {
    int opmode = Param::GetInt(Param::opmode);
    int testchan = Param::GetInt(Param::testchan);
@@ -357,69 +186,11 @@ static void Ms25Task(void)
    if (opmode == BmsFsm::SELFTEST)
       RunSelfTest();
    else if (testchan >= 0)
-      TestAdc(testchan);
+      BmsIO::TestReadCellVoltage(testchan);
    else if (Param::GetBool(Param::enable) && (opmode == BmsFsm::RUN || opmode == BmsFsm::IDLE))
-      ReadAdc();
+      BmsIO::ReadCellVoltages();
    else
       FlyingAdcBms::MuxOff();
-}
-
-static void MeasureCurrent()
-{
-   int idcmode = Param::GetInt(Param::idcmode);
-
-   if (idcmode == IDC_DIFFERENTIAL || idcmode == IDC_SINGLE)
-   {
-      float current = 0;
-      static int samples = 0;
-      static u32fp amsIn = 0, amsOut = 0;
-      static float idcavg = 0;
-      int curpos = AnaIn::curpos.Get();
-      int curneg = AnaIn::curneg.Get();
-      float idcgain = Param::GetFloat(Param::idcgain);
-      int idcofs = Param::GetInt(Param::idcofs);
-      int rawCurrent = idcmode == IDC_SINGLE ? curpos : curpos - curneg;
-
-      current = (rawCurrent - idcofs) / idcgain;
-
-      if (current < -0.8f)
-      {
-         amsOut += -FP_FROMFLT(current);
-      }
-      else if (current > 0.8f)
-      {
-         amsIn += FP_FROMFLT(current);
-      }
-
-      idcavg += current;
-      samples++;
-
-      if (samples == 200)
-      {
-         s32fp chargein = Param::Get(Param::chargein);
-         s32fp chargeout = Param::Get(Param::chargeout);
-
-         chargein += amsIn / 200;
-         chargeout += amsOut / 200;
-         idcavg /= 200;
-
-         float voltage = Param::GetFloat(Param::utotal) / 1000;
-         float power = voltage * idcavg;
-
-         Param::SetFloat(Param::idcavg, idcavg);
-         Param::SetFloat(Param::power, power);
-
-         amsIn = 0;
-         amsOut = 0;
-         samples = 0;
-         idcavg = 0;
-
-         //BmsCalculation::SetCharge(chargein, chargeout);
-         Param::SetFixed(Param::chargein, chargein);
-         Param::SetFixed(Param::chargeout, chargeout);
-      }
-      Param::SetFloat(Param::idc, current);
-   }
 }
 
 /** This function is called when the user changes a parameter */
@@ -428,7 +199,7 @@ void Param::Change(Param::PARAM_NUM paramNum)
    switch (paramNum)
    {
    default:
-      BmsAlgo::SetNominalCapacity(Param::GetFloat(Param::nomcap));
+      BmsAlgo::SetNominalCapacity(Param::GetFloat(Param::nomcap) * Param::GetFloat(Param::soh) / 100.0f);
       SelfTest::SetNumChannels(Param::GetInt(Param::numchan));
 
       for (int i = 0; i < 11; i++)
@@ -443,6 +214,19 @@ void Param::Change(Param::PARAM_NUM paramNum)
    }
 }
 
+static void LoadNVRAM()
+{
+   float soc = (float)BKP_DR1 / 100.0f;
+
+   if (soc >= 0 && soc <= 100)
+      Param::SetFloat(Param::soc, soc);
+
+   if (BKP_DR2 != 0)
+      Param::SetFloat(Param::soh, (float)BKP_DR2 / 100.0f);
+   else
+      Param::SetFixed(Param::soh, Param::Get(Param::sohpreset));
+}
+
 //Whichever timer(s) you use for the scheduler, you have to
 //implement their ISRs here and call into the respective scheduler
 extern "C" void tim2_isr(void)
@@ -453,7 +237,7 @@ extern "C" void tim2_isr(void)
 extern "C" int main(void)
 {
    clock_setup(); //Must always come first
-   //rtc_setup();
+   rtc_setup();
    ANA_IN_CONFIGURE(ANA_IN_LIST);
    DIG_IO_CONFIGURE(DIG_IO_LIST);
    #ifdef HWV1
@@ -482,20 +266,18 @@ extern "C" int main(void)
    BmsFsm fsm(&cmi, &sdo);
    //c.AddCallback(&fsm);
    bmsFsm = &fsm;
+   BmsIO::SetBmsFsm(&fsm);
 
    TerminalCommands::SetCanMap(canMapExternal);
 
-   s.AddTask(MeasureCurrent, 5);
-   s.AddTask(Ms25Task, 25);
+   s.AddTask(BmsIO::MeasureCurrent, 5);
+   s.AddTask(ReadCellVoltages, 25);
    s.AddTask(Ms100Task, 100);
 
    Param::SetInt(Param::version, 4);
    Param::Change(Param::PARAM_LAST); //Call callback once for general parameter propagation
 
-   if (BKP_DR2 != 0)
-      Param::SetFloat(Param::soh, (float)BKP_DR2 / 100.0f);
-   else
-      Param::SetInt(Param::soh, 100);
+   LoadNVRAM();
 
    while(1)
    {

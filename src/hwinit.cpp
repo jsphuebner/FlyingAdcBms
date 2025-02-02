@@ -121,9 +121,8 @@ void nvic_setup(void)
 
 void rtc_setup()
 {
-   //Base clock is HSE/128 = 8MHz/128 = 62.5kHz
-   //62.5kHz / (624 + 1) = 100Hz
-   rtc_auto_awake(RCC_HSE, 624); //10ms tick
-   rtc_set_counter_val(0);
+   //Base clock is LSI/128 = 40 kHz
+   //40 kHz / (39999 + 1) = 1Hz
+   rtc_auto_awake(RCC_LSI, 39999); //10ms tick
 }
 
