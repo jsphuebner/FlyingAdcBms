@@ -31,6 +31,20 @@ float BmsAlgo::CalculateSocFromIntegration(float lastSoc, float asDiff)
    return soc;
 }
 
+/**
+ * @brief Estimates the State of Charge (SoC) of a battery based on the lowest voltage reading.
+ *
+ * This function uses a lookup table to estimate the State of Charge (SoC) of a battery
+ * from a given lowest voltage value. It iterates through the predefined voltage-to-SoC
+ * mapping and performs linear interpolation to provide a more accurate SoC estimate
+ * when the lowest voltage falls between two known voltage values.
+ *
+ * @param lowestVoltage The lowest voltage reading from the battery, expressed as a float.
+ *
+ * @return The estimated State of Charge (SoC) of the battery as a float.
+ *         Returns 0 if the lowest voltage is below the first entry in the lookup table,
+ *         and returns 100 if the lowest voltage exceeds the last entry.
+ */
 float BmsAlgo::EstimateSocFromVoltage(float lowestVoltage)
 {
    int n = sizeof(voltageToSoc) / sizeof(voltageToSoc[0]);
@@ -52,6 +66,32 @@ float BmsAlgo::EstimateSocFromVoltage(float lowestVoltage)
    return 100;
 }
 
+/**
+ * @brief Calculates the charge current for a battery based on the maximum cell voltage.
+ *
+ * This function determines the appropriate charge current for a battery by evaluating
+ * the difference between predefined voltage levels and the maximum cell voltage.
+ * It implements a three-stage Constant Current-Constant Voltage (CC-CV) charging
+ * strategy, where each stage has its own target voltage and corresponding maximum
+ * charge current.
+ *
+ * The function computes the charge current for three stages:
+ * - The first stage uses a gain factor to calculate the charge current based on the
+ *   difference between the first target voltage and the maximum cell voltage.
+ * - The second stage calculates the charge current similarly, using the second target
+ *   voltage.
+ * - The third stage follows the same approach with the third target voltage.
+ *
+ * The results from each stage are capped to ensure they do not exceed the defined
+ * maximum charge currents and are non-negative. The final charge current is determined
+ * by taking the maximum value from the three stages.
+ *
+ * @param maxCellVoltage The maximum voltage of the battery cell, expressed as a float.
+ *
+ * @return The calculated charge current for the battery as a float.
+ *         The result is capped to ensure it does not exceed the defined current limits
+ *         and is non-negative.
+ */
 float BmsAlgo::GetChargeCurrent(float maxCellVoltage)
 {
    float result;
@@ -63,8 +103,6 @@ float BmsAlgo::GetChargeCurrent(float maxCellVoltage)
     * 2nd starts at cc2Current and aims for cv2Voltage
     * 3rd starts at cc3Current and aims for cv3Voltage
     *
-    * Low temperature derating is done by scaling down the CC values
-    * High temp derating is done by generally capping charge current
     */
 
    float cv1Result = (cvVoltage[0] - maxCellVoltage) * 3; //P-controller gain factor 3 A/mV
@@ -82,6 +120,21 @@ float BmsAlgo::GetChargeCurrent(float maxCellVoltage)
    return result;
 }
 
+/**
+ * @brief Calculates a limiting factor based on the minimum cell voltage and a specified limit.
+ *
+ * This function determines a limiting factor that scales linearly based on the difference
+ * between the provided minimum voltage and a specified limit. The limiting factor is
+ * designed to start limiting when the minimum voltage is 50 mV above the specified limit.
+ * The resulting factor is constrained to a range between 0 and 1.
+ *
+ * @param minVoltage The minimum voltage of the cell, expressed as a float.
+ * @param limit The voltage limit to compare against, expressed as a float.
+ *
+ * @return A float representing the limiting factor, which will be in the range [0, 1].
+ *         A factor of 0 indicates no limitation, while a factor of 1 indicates full
+ *         limitation based on the minimum voltage.
+ */
 float BmsAlgo::LimitMinimumCellVoltage(float minVoltage, float limit)
 {
    float factor = (minVoltage - limit) / 50; //start limiting 50mV before hitting minimum
@@ -90,6 +143,26 @@ float BmsAlgo::LimitMinimumCellVoltage(float minVoltage, float limit)
    return factor;
 }
 
+/**
+ * @brief Calculates the derating factor for battery charging based on low temperature.
+ *
+ * This function determines a derating factor for battery charging based on the
+ * provided low temperature. The derating is applied to ensure safe charging
+ * conditions at low temperatures. The function defines specific temperature thresholds
+ * to adjust the charging factor:
+ * - Above 25°C, the ideal charge curve is allowed (factor = 1).
+ * - Between 0°C and 25°C, the factor increases linearly from a minimum value
+ *   (factorAtDrt2 = 0.3) to 1 as the temperature rises.
+ * - Between -20°C and 0°C, the factor decreases linearly from the minimum value
+ *   to 0.
+ * - Below -20°C, charging is inhibited (factor = 0).
+ *
+ * @param lowTemp The low temperature value, expressed as a float.
+ *
+ * @return A float representing the derating factor for charging, which will be in
+ *         the range [0, 1]. A factor of 0 indicates that charging is inhibited,
+ *         while a factor of 1 indicates no derating.
+ */
 float BmsAlgo::LowTemperatureDerating(float lowTemp)
 {
    const float drt1Temp = 25.0f;
@@ -111,6 +184,24 @@ float BmsAlgo::LowTemperatureDerating(float lowTemp)
    return factor;
 }
 
+/**
+ * @brief Calculates the derating factor for battery current based on high temperature.
+ *
+ * This function determines a derating factor for battery current based on the
+ * provided high temperature and a maximum temperature limit. The derating factor
+ * is calculated to ensure safe operating conditions at high temperatures. The
+ * factor is derived from the difference between the maximum temperature and the
+ * current high temperature, scaled by a factor of 0.15.
+ *
+ * The resulting factor is constrained to be within the range [0, 1].
+ *
+ * @param highTemp The high temperature value, expressed as a float.
+ * @param maxTemp The maximum allowable temperature, expressed as a float.
+ *
+ * @return A float representing the derating factor for charging, which will be in
+ *         the range [0, 1]. A factor of 0 indicates full derating, while a factor
+ *         of 1 indicates no derating.
+ */
 float BmsAlgo::HighTemperatureDerating(float highTemp, float maxTemp)
 {
    float factor = (maxTemp - highTemp) * 0.15f;
@@ -151,6 +242,23 @@ void BmsAlgo::SetCCCVCurve(uint8_t idx, float current, uint16_t voltage)
    cvVoltage[idx] = voltage;
 }
 
+/**
+ * @brief Calculates the State of Health (SoH) of a battery based on the
+ *        last and new State of Charge (SoC) values and the actual difference.
+ *
+ * This function estimates the State of Health (SoH) of a battery by comparing
+ * the last and new State of Charge (SoC) values. It calculates the difference
+ * in SoC and, if the difference is significant (greater than 20%), it uses
+ * this information to estimate the available amp hours and compute the SoH
+ * as a percentage.
+ *
+ * @param lastSoc The last known State of Charge (SoC) of the battery, expressed as a float.
+ * @param newSoc The new State of Charge (SoC) of the battery, expressed as a float.
+ * @param asDiff The actual difference in amp hours available, expressed as a float.
+ *
+ * @return The estimated State of Health (SoH) of the battery as a percentage.
+ *         Returns -1 if the SoC difference is not significant enough to estimate SoH.
+ */
 float BmsAlgo::CalculateSoH(float lastSoc, float newSoc, float asDiff)
 {
    float soh = -1;
