@@ -16,7 +16,7 @@
 		</MakeCommands>
 		<Build>
 			<Target title="HWV2">
-				<Option output="stm32_bms" prefix_auto="0" extension_auto="0" />
+				<Option output="stm32_bms" prefix_auto="1" extension_auto="1" />
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="armelfgcc" />
@@ -51,79 +51,309 @@
 					<SilentBuild command="HW=HWV1 make &gt; $(CMD_NULL)" />
 				</MakeCommands>
 			</Target>
+			<Target title="Test">
+				<Option output="test/test_bms" prefix_auto="0" extension_auto="0" />
+				<Option working_dir="test/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+			</Target>
 		</Build>
-		<Unit filename="Makefile" />
-		<Unit filename="include/anain_prj.h" />
-		<Unit filename="include/bmsalgo.h" />
-		<Unit filename="include/bmsfsm.h" />
-		<Unit filename="include/bmsio.h" />
-		<Unit filename="include/digio_prj.h" />
-		<Unit filename="include/errormessage_prj.h" />
-		<Unit filename="include/flyingadcbms.h" />
-		<Unit filename="include/hwdefs.h" />
-		<Unit filename="include/hwinit.h" />
-		<Unit filename="include/param_prj.h" />
-		<Unit filename="include/selftest.h" />
-		<Unit filename="include/temp_meas.h" />
-		<Unit filename="libopeninv/include/anain.h" />
-		<Unit filename="libopeninv/include/canhardware.h" />
-		<Unit filename="libopeninv/include/canmap.h" />
-		<Unit filename="libopeninv/include/cansdo.h" />
-		<Unit filename="libopeninv/include/crc8.h" />
-		<Unit filename="libopeninv/include/delay.h" />
-		<Unit filename="libopeninv/include/digio.h" />
-		<Unit filename="libopeninv/include/errormessage.h" />
-		<Unit filename="libopeninv/include/foc.h" />
-		<Unit filename="libopeninv/include/fu.h" />
-		<Unit filename="libopeninv/include/linbus.h" />
-		<Unit filename="libopeninv/include/my_fp.h" />
-		<Unit filename="libopeninv/include/my_math.h" />
-		<Unit filename="libopeninv/include/my_string.h" />
-		<Unit filename="libopeninv/include/param_save.h" />
-		<Unit filename="libopeninv/include/params.h" />
-		<Unit filename="libopeninv/include/picontroller.h" />
-		<Unit filename="libopeninv/include/printf.h" />
-		<Unit filename="libopeninv/include/sine_core.h" />
-		<Unit filename="libopeninv/include/stm32_can.h" />
-		<Unit filename="libopeninv/include/stm32_loader.h" />
-		<Unit filename="libopeninv/include/stm32scheduler.h" />
-		<Unit filename="libopeninv/include/terminal.h" />
-		<Unit filename="libopeninv/include/terminalcommands.h" />
-		<Unit filename="libopeninv/src/anain.cpp" />
-		<Unit filename="libopeninv/src/canhardware.cpp" />
-		<Unit filename="libopeninv/src/canmap.cpp" />
-		<Unit filename="libopeninv/src/cansdo.cpp" />
-		<Unit filename="libopeninv/src/crc8.cpp" />
-		<Unit filename="libopeninv/src/digio.cpp" />
-		<Unit filename="libopeninv/src/errormessage.cpp" />
-		<Unit filename="libopeninv/src/foc.cpp" />
-		<Unit filename="libopeninv/src/fu.cpp" />
-		<Unit filename="libopeninv/src/linbus.cpp" />
+		<Unit filename="Makefile">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="include/anain_prj.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="include/bmsalgo.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="include/bmsfsm.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="include/bmsio.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="include/digio_prj.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="include/errormessage_prj.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="include/flyingadcbms.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="include/hwdefs.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="include/hwinit.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="include/param_prj.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="include/selftest.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="include/temp_meas.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/anain.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/canhardware.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/canmap.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/cansdo.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/crc8.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/delay.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/digio.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/errormessage.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/foc.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/fu.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/linbus.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/my_fp.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/my_math.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/my_string.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/param_save.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/params.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/picontroller.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/printf.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/sine_core.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/stm32_can.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/stm32_loader.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/stm32scheduler.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/terminal.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/include/terminalcommands.h">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/anain.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/canhardware.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/canmap.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/cansdo.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/crc8.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/digio.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/errormessage.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/foc.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/fu.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/linbus.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
 		<Unit filename="libopeninv/src/my_fp.c">
 			<Option compilerVar="CC" />
+			<Option target="HWV2" />
+			<Option target="HWV1" />
 		</Unit>
 		<Unit filename="libopeninv/src/my_string.c">
 			<Option compilerVar="CC" />
+			<Option target="HWV2" />
+			<Option target="HWV1" />
 		</Unit>
-		<Unit filename="libopeninv/src/param_save.cpp" />
-		<Unit filename="libopeninv/src/params.cpp" />
-		<Unit filename="libopeninv/src/picontroller.cpp" />
-		<Unit filename="libopeninv/src/printf.cpp" />
-		<Unit filename="libopeninv/src/sine_core.cpp" />
-		<Unit filename="libopeninv/src/stm32_can.cpp" />
-		<Unit filename="libopeninv/src/stm32scheduler.cpp" />
-		<Unit filename="libopeninv/src/terminal.cpp" />
-		<Unit filename="libopeninv/src/terminalcommands.cpp" />
-		<Unit filename="linker.ld" />
-		<Unit filename="src/bmsalgo.cpp" />
-		<Unit filename="src/bmsfsm.cpp" />
-		<Unit filename="src/bmsio.cpp" />
-		<Unit filename="src/flyingadcbms.cpp" />
-		<Unit filename="src/hwinit.cpp" />
-		<Unit filename="src/main.cpp" />
-		<Unit filename="src/selftest.cpp" />
-		<Unit filename="src/temp_meas.cpp" />
-		<Unit filename="src/terminal_prj.cpp" />
+		<Unit filename="libopeninv/src/param_save.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/params.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/picontroller.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/printf.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/sine_core.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/stm32_can.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/stm32scheduler.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/terminal.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="libopeninv/src/terminalcommands.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="linker.ld">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="src/bmsalgo.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="src/bmsfsm.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="src/bmsio.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="src/flyingadcbms.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="src/hwinit.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="src/main.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="src/selftest.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="src/temp_meas.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="src/terminal_prj.cpp">
+			<Option target="HWV2" />
+			<Option target="HWV1" />
+		</Unit>
+		<Unit filename="test/Makefile">
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="test/stub_canhardware.cpp">
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="test/stub_canhardware.h">
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="test/stub_libopencm3.c">
+			<Option compilerVar="CC" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="test/test.h">
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="test/test_bmsalgo.cpp">
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="test/test_main.cpp">
+			<Option target="Test" />
+		</Unit>
 		<Extensions>
 			<DoxyBlocks>
 				<comment_style block="0" line="0" />
@@ -135,9 +365,6 @@
 				<general />
 			</DoxyBlocks>
 			<debugger>
-				<remote_debugging>
-					<options conn_type="0" ip_address="localhost" ip_port="3333" additional_cmds="load&#x0A;r" />
-				</remote_debugging>
 				<remote_debugging target="HWV1">
 					<options conn_type="0" ip_address="localhost" ip_port="3333" additional_cmds="load&#x0A;r" />
 				</remote_debugging>

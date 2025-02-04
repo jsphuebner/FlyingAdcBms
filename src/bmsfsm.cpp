@@ -25,6 +25,7 @@
 
 #define IS_FIRST_THRESH       1800
 #define SDO_INDEX_PARAMS      0x2000
+#define BOOT_DELAY_CYCLES     5
 
 BmsFsm::BmsFsm(CanMap* cm, CanSdo* cs)
    : canMap(cm), canSdo(cs), isMain(false), infoIndex(1), numModules(1), cycles(0)
@@ -94,6 +95,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
       {
          ourNodeId = recvNodeId;
          ourIndex = recvIndex;
+         pdobase = recvPdoBase;
          canSdo->SetNodeId(ourNodeId);
          DigIo::nextena_out.Set();
          canMap->Clear();
@@ -105,7 +107,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
    case SET_ADDR:
       cycles++;
 
-      if (cycles == 5)
+      if (cycles == BOOT_DELAY_CYCLES)
       {
          data[1] = recvNodeId + 1;
          data[1] |= (ourIndex + 1) << 8;
@@ -209,7 +211,7 @@ void BmsFsm::HandleRx(uint32_t canId, uint32_t data[2], uint8_t)
    case 0x7dd:
       recvNodeId = data[1] & 0xFF;
       recvIndex = (data[1] >> 8) & 0xFF;
-      pdobase = data[1] >> 16;
+      recvPdoBase = data[1] >> 16;
    }
 }
 

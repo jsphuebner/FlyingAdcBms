@@ -38,7 +38,7 @@ CPPFLAGS    = -Og -ggdb -Wall -Wextra -Iinclude/ -Ilibopeninv/include -Ilibopenc
 LDSCRIPT	  = linker.ld
 LDFLAGS    = -Llibopencm3/lib -T$(LDSCRIPT) -march=armv7 -nostartfiles -Wl,--gc-sections,-Map,linker.map
 OBJSL		  = main.o hwinit.o stm32scheduler.o params.o  \
-             my_string.o digio.o my_fp.o printf.o anain.o \
+             my_string.o digio.o my_fp.o printf.o anain.o picontroller.o \
              param_save.o errormessage.o stm32_can.o canhardware.o canmap.o cansdo.o \
              terminalcommands.o flyingadcbms.o bmsfsm.o bmsalgo.o bmsio.o temp_meas.o selftest.o
 
@@ -125,6 +125,8 @@ get-deps:
 	$(Q)${MAKE} -C libopencm3 TARGETS=stm32/f1
 
 Test:
-	cd test && $(MAKE)
+	$(MAKE) -C test
+	$(MAKE) -C libopeninv/test
 cleanTest:
-	cd test && $(MAKE) clean
+	$(MAKE) -C test clean
+	$(MAKE) -C libopeninv/test clean

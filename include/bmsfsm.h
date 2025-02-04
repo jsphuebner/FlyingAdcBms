@@ -49,6 +49,7 @@ class BmsFsm: public CanCallback
       bool isMain;
       uint8_t recvNodeId;
       uint8_t recvIndex;
+      uint16_t recvPdoBase;
       uint8_t ourNodeId;
       uint8_t ourIndex;
       uint16_t pdobase;

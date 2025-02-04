@@ -22,12 +22,20 @@
 float BmsAlgo::nominalCapacity;
 //voltage to state of charge            0%    10%   20%   30%   40%   50%   60%   70%   80%   90%   100%
 uint16_t BmsAlgo::voltageToSoc[] =    { 3300, 3400, 3450, 3500, 3560, 3600, 3700, 3800, 4000, 4100, 4200 };
-float BmsAlgo::ccCurrent[3];
-uint16_t BmsAlgo::cvVoltage[3];
+PiController BmsAlgo::cvControllers[3];
 
+/** \brief Calculates SoC from a starting point adding the charge through the battery
+ *
+ * \param lastSoc The last absolute estimated SoC
+ * \param asDiff The change in charge i.e. integrated current since estimation
+ * \return float the current SoC
+ *
+ */
 float BmsAlgo::CalculateSocFromIntegration(float lastSoc, float asDiff)
 {
    float soc = lastSoc + (100 * asDiff / (3600 * nominalCapacity));
+   soc = MAX(0, soc);
+   soc = MIN(102, soc); //allow slight overrun that doesn't wrap around 0 in CAN message
    return soc;
 }
 
@@ -105,15 +113,9 @@ float BmsAlgo::GetChargeCurrent(float maxCellVoltage)
     *
     */
 
-   float cv1Result = (cvVoltage[0] - maxCellVoltage) * 3; //P-controller gain factor 3 A/mV
-   cv1Result = MIN(cv1Result, ccCurrent[0]);
-
-   float cv2Result = (cvVoltage[1] - maxCellVoltage) * 2;
-   cv2Result = MIN(cv2Result, ccCurrent[1]);
-
-   float cv3Result = (cvVoltage[2] - maxCellVoltage) * 2;
-   cv3Result = MIN(cv3Result, ccCurrent[2]);
-   cv3Result = MAX(cv3Result, 0);
+   float cv1Result = cvControllers[0].Run(FP_FROMFLT(maxCellVoltage));
+   float cv2Result = cvControllers[1].Run(FP_FROMFLT(maxCellVoltage));
+   float cv3Result = cvControllers[2].Run(FP_FROMFLT(maxCellVoltage));
 
    result = MAX(cv1Result, MAX(cv2Result, cv3Result));
 
@@ -238,8 +240,12 @@ void BmsAlgo::SetSocLookupPoint(uint8_t soc, uint16_t voltage)
 void BmsAlgo::SetCCCVCurve(uint8_t idx, float current, uint16_t voltage)
 {
    if (idx > 2) return;
-   ccCurrent[idx] = current;
-   cvVoltage[idx] = voltage;
+
+   cvControllers[idx].SetGains(3, 3);
+   cvControllers[idx].SetCallingFrequency(10);
+   cvControllers[idx].SetRef(FP_FROMINT(voltage));
+   cvControllers[idx].SetMinMaxY(0, current);
+   cvControllers[idx].ResetIntegrator();
 }
 
 /**

@@ -38,13 +38,14 @@ jobs:
           name: BMS firmware hex
           path: stm32_bms.hex
 
-  
-# Unit tests are currently broken so don't build and run them for now
-#- name: Build unit tests on host
-#        run: |
-#          make -C test
-#
-#      - name: Run unit tests on host
-#        run: |
-#          test/test_sine
+      - name: Build unit tests on host
+        run: |
+          make Test
 
+      - name: Run stm32-sine unit tests on host
+        run: |
+          test/test_bms
+
+      - name: Run libopeninv unit tests on host
+        run: |
+          libopeninv/test/test_libopeninv

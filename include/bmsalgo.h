@@ -20,6 +20,7 @@
 #define BMSALGO_H
 
 #include <stdint.h>
+#include "picontroller.h"
 
 class BmsAlgo
 {
@@ -38,8 +39,7 @@ class BmsAlgo
    private:
       static float nominalCapacity;
       static uint16_t voltageToSoc[11];
-      static float ccCurrent[3]; //Support 3 consecutive CC/CV curves
-      static uint16_t cvVoltage[3];
+      static PiController cvControllers[3]; //Support 3 consecutive CC/CV curves
 };
 
 #endif // BMSALGO_H
