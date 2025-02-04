@@ -56,6 +56,9 @@
 				<Option working_dir="test/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
+				<Compiler>
+					<Add directory="libopeninv/include" />
+				</Compiler>
 			</Target>
 		</Build>
 		<Unit filename="Makefile">
@@ -182,6 +185,7 @@
 			<Option target="HWV2" />
 			<Option target="HWV1" />
 		</Unit>
+		<Unit filename="libopeninv/include/sdocommands.h" />
 		<Unit filename="libopeninv/include/sine_core.h">
 			<Option target="HWV2" />
 			<Option target="HWV1" />
@@ -272,6 +276,7 @@
 			<Option target="HWV2" />
 			<Option target="HWV1" />
 		</Unit>
+		<Unit filename="libopeninv/src/sdocommands.cpp" />
 		<Unit filename="libopeninv/src/sine_core.cpp">
 			<Option target="HWV2" />
 			<Option target="HWV1" />

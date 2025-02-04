@@ -37,6 +37,7 @@
 #include "printf.h"
 #include "stm32scheduler.h"
 #include "terminalcommands.h"
+#include "sdocommands.h"
 #include "flyingadcbms.h"
 #include "bmsfsm.h"
 #include "bmsalgo.h"
@@ -269,6 +270,7 @@ extern "C" int main(void)
    BmsIO::SetBmsFsm(&fsm);
 
    TerminalCommands::SetCanMap(canMapExternal);
+   SdoCommands::SetCanMap(canMapExternal);
 
    s.AddTask(BmsIO::MeasureCurrent, 5);
    s.AddTask(ReadCellVoltages, 25);
@@ -282,10 +284,16 @@ extern "C" int main(void)
    while(1)
    {
       char c = 0;
+      CanSdo::SdoFrame* sdoFrame = sdo.GetPendingUserspaceSdo();
 
       if (sdo.GetPrintRequest() == PRINT_JSON)
       {
          TerminalCommands::PrintParamsJson(&sdo, &c);
+      }
+      if (0 != sdoFrame)
+      {
+         SdoCommands::ProcessStandardCommands(sdoFrame);
+         sdo.SendSdoReply(sdoFrame);
       }
    }
 
