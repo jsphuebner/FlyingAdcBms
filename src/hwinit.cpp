@@ -132,17 +132,21 @@ HwRev detect_hw()
    return HW_1X;
    #endif // HWV1
 
-   //configure has input with pull-uo
+   HwRev hwrev = HW_UNKNOWN;
+   //configure as input with pull-uo
    gpio_set_mode(GPIOB, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO9 | GPIO10 | GPIO11);
    gpio_set(GPIOB, GPIO9 | GPIO10 | GPIO11);
    uint16_t revisionInput = gpio_get(GPIOB, GPIO9 | GPIO10 | GPIO11);
+
    if (revisionInput == (GPIO9 | GPIO10 | GPIO11))
    {
       //We are on hardware before 2.3, none of the pins are pulled to GND
       //check if mux pins are pulled down
       gpio_set_mode(GPIOB, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO0);
       gpio_set(GPIOB, GPIO0);
+
       for (volatile int i = 0; i < 80000; i++);
+
       if (gpio_get(GPIOB, GPIO0))
       {
          //no pull up resistor, must be V2.0 or 2.1
@@ -150,13 +154,16 @@ HwRev detect_hw()
          //check if rtc started from 0. It's a week indication because after power cycle it will
          //always start at 0. But on subsequent starts it will start > 0
          if (rtc_get_counter_val() > 1)
-            return HW_21;
+            hwrev = HW_21;
          else
-            return HW_20;
+            hwrev = HW_20;
       }
-      return HW_22;
+
+      gpio_clear(GPIOB, GPIO0);
+      hwrev = HW_22;
    }
    else if (revisionInput == GPIO9)
-      return HW_23;
-   return HW_UNKNOWN;
+      hwrev = HW_23;
+
+   return hwrev;
 }
