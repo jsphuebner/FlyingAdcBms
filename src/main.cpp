@@ -50,6 +50,7 @@ static Stm32Scheduler* scheduler;
 static CanMap* canMapExternal;
 static CanMap* canMapInternal;
 static BmsFsm* bmsFsm;
+HwRev hwRev;
 
 static void CalculateCurrentLimits()
 {
@@ -199,6 +200,9 @@ void Param::Change(Param::PARAM_NUM paramNum)
 {
    switch (paramNum)
    {
+   case Param::sohpreset:
+      Param::SetFloat(Param::soh, Param::GetFloat(Param::sohpreset));
+      break;
    default:
       BmsAlgo::SetNominalCapacity(Param::GetFloat(Param::nomcap) * Param::GetFloat(Param::soh) / 100.0f);
       SelfTest::SetNumChannels(Param::GetInt(Param::numchan));
@@ -239,6 +243,7 @@ extern "C" int main(void)
 {
    clock_setup(); //Must always come first
    rtc_setup();
+   hwRev = detect_hw();
    ANA_IN_CONFIGURE(ANA_IN_LIST);
    DIG_IO_CONFIGURE(DIG_IO_LIST);
    #ifdef HWV1
@@ -276,6 +281,7 @@ extern "C" int main(void)
    s.AddTask(ReadCellVoltages, 25);
    s.AddTask(Ms100Task, 100);
 
+   Param::SetInt(Param::hwrev, hwRev);
    Param::SetInt(Param::version, 4);
    Param::Change(Param::PARAM_LAST); //Call callback once for general parameter propagation
 

@@ -39,7 +39,7 @@
  */
 
  //Define a version string of your firmware here
-#define VER 0.22.B
+#define VER 0.23.B
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
@@ -47,7 +47,7 @@
    3. Display values
  */
 //Next param id (increase when adding new parameter!): 54
-//Next value Id: 2104
+//Next value Id: 2105
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
     PARAM_ENTRY(CAT_BMS,     gain,        "mV/dig",  1,      1000,   586,    3   ) \
@@ -90,6 +90,7 @@
     TESTP_ENTRY(CAT_TEST,    enable,      OFFON,     0,      1,      1,      48   ) \
     TESTP_ENTRY(CAT_TEST,    testchan,    "",        -1,     15,     -1,     49   ) \
     VALUE_ENTRY(version,     VERSTR, 2001 ) \
+    VALUE_ENTRY(hwrev,       HWREVS, 2104 ) \
     VALUE_ENTRY(opmode,      OPMODES,2000 ) \
     VALUE_ENTRY(lasterr,     errorListString,2101 ) \
     VALUE_ENTRY(errchan,     "",     2102 ) \
@@ -190,6 +191,7 @@
 
 
 /***** Enum String definitions *****/
+#define HWREVS       "0=Unknown, 1=v1.x, 2=v2.0, 3=v2.1, 4=v2.2, 5=v2.3"
 #define OPMODES      "0=Boot, 1=GetAddr, 2=SetAddr, 3=ReqInfo, 4=RecvInfo, 5=Init, 6=SelfTest, 7=Run, 8=Idle, 9=Error"
 #define OFFON        "0=Off, 1=On"
 #define BALMODE      "0=Off, 1=Additive, 2=Dissipative, 3=Both"

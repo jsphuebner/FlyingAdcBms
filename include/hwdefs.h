@@ -11,7 +11,7 @@
 #define PARAM_BLKSIZE FLASH_PAGE_SIZE
 #define PARAM_BLKNUM  1   //last block of 1k
 #define CAN1_BLKNUM   2
-#define CAN2_BLKNUM   4
 
+enum HwRev { HW_UNKNOWN, HW_1X, HW_20, HW_21, HW_22, HW_23 };
 
 #endif // HWDEFS_H_INCLUDED

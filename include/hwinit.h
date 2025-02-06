@@ -19,7 +19,7 @@
 
 #ifndef HWINIT_H_INCLUDED
 #define HWINIT_H_INCLUDED
-
+#include "hwdefs.h"
 
 #ifdef __cplusplus
 extern "C"
@@ -31,6 +31,7 @@ void nvic_setup();
 void rtc_setup();
 void spi_setup();
 void write_bootloader_pininit();
+HwRev detect_hw();
 
 #ifdef __cplusplus
 }
