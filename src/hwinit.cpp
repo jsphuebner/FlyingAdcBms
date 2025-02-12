@@ -56,11 +56,12 @@ void clock_setup(void)
    rcc_periph_clock_enable(RCC_CAN1); //CAN
    rcc_periph_clock_enable(RCC_AFIO); //Needed to disable JTAG!
    rcc_periph_clock_enable(RCC_SPI1); //Needed on V1 HW
+   rcc_periph_clock_enable(RCC_SPI2);
 }
 
 void spi_setup()
 {
-   rcc_set_ppre2(RCC_CFGR_PPRE_DIV4); //slow down SPI interface
+   rcc_set_ppre2(RCC_CFGR_PPRE_DIV4); //slow down SPI1 interface
 
    spi_init_master(SPI1, SPI_CR1_BAUDRATE_FPCLK_DIV_256, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
                   SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_DFF_16BIT, SPI_CR1_MSBFIRST);
@@ -137,6 +138,7 @@ HwRev detect_hw()
    gpio_set_mode(GPIOB, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO9 | GPIO10 | GPIO11);
    gpio_set(GPIOB, GPIO9 | GPIO10 | GPIO11);
    uint16_t revisionInput = gpio_get(GPIOB, GPIO9 | GPIO10 | GPIO11);
+   const uint16_t rev23 = GPIO10 | GPIO11;
 
    if (revisionInput == (GPIO9 | GPIO10 | GPIO11))
    {
@@ -158,11 +160,12 @@ HwRev detect_hw()
          else
             hwrev = HW_20;
       }
+      else
+         hwrev = HW_22;
 
       gpio_clear(GPIOB, GPIO0);
-      hwrev = HW_22;
    }
-   else if (revisionInput == GPIO9)
+   else if (revisionInput == rev23)
       hwrev = HW_23;
 
    return hwrev;

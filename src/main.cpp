@@ -188,7 +188,7 @@ static void ReadCellVoltages(void)
    if (opmode == BmsFsm::SELFTEST)
       RunSelfTest();
    else if (testchan >= 0)
-      BmsIO::TestReadCellVoltage(testchan);
+      BmsIO::TestReadCellVoltage(testchan, (FlyingAdcBms::BalanceCommand)Param::GetInt(Param::testbalance));
    else if (Param::GetBool(Param::enable) && (opmode == BmsFsm::RUN || opmode == BmsFsm::IDLE))
       BmsIO::ReadCellVoltages();
    else

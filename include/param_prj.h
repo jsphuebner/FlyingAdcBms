@@ -46,7 +46,7 @@
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 54
+//Next param id (increase when adding new parameter!): 55
 //Next value Id: 2105
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
@@ -87,8 +87,9 @@
     PARAM_ENTRY(CAT_SENS,    tempbeta,    "",        1,      100000, 3900,   51  ) \
     PARAM_ENTRY(CAT_COMM,    pdobase,     "",        0,      2047,   500,    10  ) \
     PARAM_ENTRY(CAT_COMM,    sdobase,     "",        0,      63,     10,     11  ) \
-    TESTP_ENTRY(CAT_TEST,    enable,      OFFON,     0,      1,      1,      48   ) \
-    TESTP_ENTRY(CAT_TEST,    testchan,    "",        -1,     15,     -1,     49   ) \
+    TESTP_ENTRY(CAT_TEST,    enable,      OFFON,     0,      1,      1,      48  ) \
+    TESTP_ENTRY(CAT_TEST,    testchan,    "",        -1,     15,     -1,     49  ) \
+    TESTP_ENTRY(CAT_TEST,    testbalance, BALMODE,   0,      2,      0,      54  ) \
     VALUE_ENTRY(version,     VERSTR, 2001 ) \
     VALUE_ENTRY(hwrev,       HWREVS, 2104 ) \
     VALUE_ENTRY(opmode,      OPMODES,2000 ) \

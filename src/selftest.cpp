@@ -63,6 +63,7 @@ SelfTest::TestResult SelfTest::RunTestMuxOff()
 {
    if (cycleCounter == 0) {
       FlyingAdcBms::MuxOff();
+      FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_DISCHARGE);
       FlyingAdcBms::StartAdc();
    }
    else if (cycleCounter == 1) {
@@ -89,19 +90,19 @@ SelfTest::TestResult SelfTest::RunTestBalancer()
       FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_CHARGE);
       FlyingAdcBms::StartAdc();
    }
-   else if (cycleCounter == 1) {
+   else if (cycleCounter == 2) {
       int adc = FlyingAdcBms::GetResult();
 
       if (adc < 8190) //We expect the ADC to saturate
          return TestFailed;
    }
-   else if (cycleCounter == 2) {
+   else if (cycleCounter == 3) {
       FlyingAdcBms::SelectChannel(1); //this leads to negative voltage
       FlyingAdcBms::MuxOff(); //but we turn off the mux right away
       FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_CHARGE);
       FlyingAdcBms::StartAdc();
    }
-   else if (cycleCounter == 3) {
+   else if (cycleCounter == 5) {
       int adc = FlyingAdcBms::GetResult();
       FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_OFF);
 

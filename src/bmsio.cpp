@@ -214,7 +214,7 @@ void BmsIO::MeasureCurrent()
    }
 }
 
-void BmsIO::TestReadCellVoltage(int chan)
+void BmsIO::TestReadCellVoltage(int chan, FlyingAdcBms::BalanceCommand cmd)
 {
    float gain = Param::GetFloat(Param::gain);
 
@@ -227,6 +227,7 @@ void BmsIO::TestReadCellVoltage(int chan)
 
    float udc = FlyingAdcBms::GetResult() * (gain / 1000.0f);;
    FlyingAdcBms::SelectChannel(chan);
+   FlyingAdcBms::SetBalancing(cmd);
    FlyingAdcBms::StartAdc();
    Param::SetFloat((Param::PARAM_NUM)(Param::u0 + chan), udc);
 }

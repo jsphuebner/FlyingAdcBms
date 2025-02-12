@@ -20,8 +20,8 @@
 #include <libopencm3/stm32/spi.h>
 #include "flyingadcbms.h"
 #include "digio.h"
+#include "hwdefs.h"
 
-#define I2C_DELAY       30
 #define READ            true
 #define WRITE           false
 #define ADC_ADDR        0x68
@@ -32,10 +32,10 @@
 #define ADC_RATE_60SPS  0x4
 #define ADC_RATE_15SPS  0x8
 
-static void SendRecvI2C(uint8_t address, bool read, uint8_t* data, uint8_t len);
-
 uint8_t FlyingAdcBms::selectedChannel = 0;
 uint8_t FlyingAdcBms::previousChannel = 0;
+uint8_t FlyingAdcBms::balancerPins = 0;
+uint8_t FlyingAdcBms::i2cdelay = 30;
 static bool lock = false;
 
 
@@ -72,6 +72,9 @@ void FlyingAdcBms::Init()
    uint8_t data[2] = { 0x3 /* pin mode register */, 0x0 /* All pins as output */};
    SendRecvI2C(DIO_ADDR, WRITE, data, 2);
    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, 255);
+
+   if (hwRev == HW_23)
+      i2cdelay = 5;
 }
 
 void FlyingAdcBms::MuxOff()
@@ -90,9 +93,9 @@ void FlyingAdcBms::SelectChannel(uint8_t channel)
 
    selectedChannel = channel;
 
-   //This creates some delay and should be done anyway.
-   uint8_t data[2] = { 0x3 /* pin mode register */, 0x0 /* All pins as output */};
-   SendRecvI2C(DIO_ADDR, WRITE, data, 2);
+   //This creates some delay between switching channels
+   SendRecvI2C(DIO_ADDR, READ, &balancerPins, 1);
+   SetBalancing(BAL_OFF);
 
    //Example Chan8:  turn on G8 (=even mux word 4) and G9 (odd mux word 4)
    //Example Chan9:  turn on G10 (=even mux word 5) and G9 (odd mux word 4)
@@ -101,8 +104,8 @@ void FlyingAdcBms::SelectChannel(uint8_t channel)
    uint8_t oddMuxWord = (channel / 2) << 4;
    gpio_set(GPIOB, evenMuxWord | oddMuxWord | GPIO7);
 
-   //More delay
-   SetBalancing(BAL_OFF);
+   //More delay for low pass to settle
+   SendRecvI2C(DIO_ADDR, READ, &balancerPins, 1);
 }
 #endif // V1HW
 
@@ -147,67 +150,72 @@ FlyingAdcBms::BalanceStatus FlyingAdcBms::SetBalancing(BalanceCommand cmd)
       data[1] = selectedChannel & 1 ? 0xC : 0x3;
       stt = selectedChannel & 1 ? STT_CHARGENEG : STT_CHARGEPOS;
    }
-   SendRecvI2C(DIO_ADDR, WRITE, data, 2);
+
+   if (data[1] != balancerPins)
+      SendRecvI2C(DIO_ADDR, WRITE, data, 2);
 
    return stt;
 }
 
-static void BitBangI2CStartAddress(uint8_t address)
+void FlyingAdcBms::BitBangI2CStartAddress(uint8_t address)
 {
    DigIo::i2c_do.Clear();
-   for (volatile int i = 0; i < I2C_DELAY*2; i++);
+   for (volatile int i = 0; i < i2cdelay*2; i++);
    DigIo::i2c_scl.Clear();
 
    for (int i = 16; i >= 0; i--)
    {
       if (address & 0x80 || i < 1) DigIo::i2c_do.Set();
       else DigIo::i2c_do.Clear();
-      for (volatile int j = 0; j < I2C_DELAY; j++);
+      for (volatile int j = 0; j < i2cdelay; j++);
       DigIo::i2c_scl.Toggle();;
       if (i & 1) address <<= 1;
    }
-   for (volatile int i = 0; i < I2C_DELAY; i++);
+   for (volatile int i = 0; i < i2cdelay; i++);
 
    DigIo::i2c_do.Set();
 }
 
-static uint8_t BitBangI2CByte(uint8_t byte, bool ack)
+uint8_t FlyingAdcBms::BitBangI2CByte(uint8_t byte, bool ack)
 {
    uint8_t byteRead = 0;
 
    DigIo::i2c_scl.Clear();
-   for (volatile int i = 0; i < I2C_DELAY; i++);
+   for (volatile int i = 0; i < i2cdelay; i++);
 
    for (int i = 16; i >= 0; i--)
    {
       if (byte & 0x80 || (i < 1 && !ack)) DigIo::i2c_do.Set();
       else DigIo::i2c_do.Clear();
-      for (volatile int j = 0; j < I2C_DELAY; j++);
-      DigIo::i2c_scl.Toggle();;
+      for (volatile int j = 0; j < i2cdelay; j++);
+      DigIo::i2c_scl.Toggle();
       if (i & 1) {
          byte <<= 1;
+      }
+      else if (i > 0)
+      {
          byteRead <<= 1;
          byteRead |= DigIo::i2c_di.Get();
       }
    }
-   for (volatile int i = 0; i < I2C_DELAY; i++);
+   for (volatile int i = 0; i < i2cdelay; i++);
 
    return byteRead;
 }
 
-static void BitBangI2CStop()
+void FlyingAdcBms::BitBangI2CStop()
 {
    DigIo::i2c_scl.Clear();
-   for (volatile int i = 0; i < I2C_DELAY; i++);
+   for (volatile int i = 0; i < i2cdelay; i++);
    DigIo::i2c_do.Clear(); //data low
-   for (volatile int i = 0; i < I2C_DELAY; i++);
+   for (volatile int i = 0; i < i2cdelay; i++);
    DigIo::i2c_scl.Set();
-   for (volatile int i = 0; i < I2C_DELAY; i++);
+   for (volatile int i = 0; i < i2cdelay; i++);
    DigIo::i2c_do.Set(); //data high -> STOP
-   for (volatile int i = 0; i < I2C_DELAY; i++);
+   for (volatile int i = 0; i < i2cdelay; i++);
 }
 
-static void SendRecvI2C(uint8_t address, bool read, uint8_t* data, uint8_t len)
+void FlyingAdcBms::SendRecvI2C(uint8_t address, bool read, uint8_t* data, uint8_t len)
 {
    if (lock) return;
 
@@ -215,6 +223,7 @@ static void SendRecvI2C(uint8_t address, bool read, uint8_t* data, uint8_t len)
 
    address <<= 1;
    address |= read;
+
    BitBangI2CStartAddress(address);
 
    for (int i = 0; i < len; i++)

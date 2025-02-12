@@ -23,7 +23,7 @@
 class FlyingAdcBms
 {
    public:
-      enum BalanceCommand { BAL_OFF, BAL_DISCHARGE, BAL_CHARGE };
+      enum BalanceCommand { BAL_OFF, BAL_CHARGE, BAL_DISCHARGE };
       enum BalanceStatus  { STT_OFF, STT_DISCHARGE, STT_CHARGEPOS, STT_CHARGENEG };
 
       static void Init();
@@ -36,7 +36,12 @@ class FlyingAdcBms
    protected:
 
    private:
-      static uint8_t selectedChannel, previousChannel;
+      static void SendRecvI2C(uint8_t address, bool read, uint8_t* data, uint8_t len);
+      static void BitBangI2CStartAddress(uint8_t address);
+      static uint8_t BitBangI2CByte(uint8_t byte, bool ack);
+      static void BitBangI2CStop();
+
+      static uint8_t selectedChannel, previousChannel, balancerPins, i2cdelay;
 };
 
 #endif // FLYINGADCBMS_H

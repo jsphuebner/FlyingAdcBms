@@ -14,4 +14,6 @@
 
 enum HwRev { HW_UNKNOWN, HW_1X, HW_20, HW_21, HW_22, HW_23 };
 
+extern HwRev hwRev;
+
 #endif // HWDEFS_H_INCLUDED
