@@ -117,7 +117,7 @@ void write_bootloader_pininit()
 void nvic_setup(void)
 {
    nvic_enable_irq(NVIC_TIM2_IRQ); //Scheduler
-   nvic_set_priority(NVIC_TIM2_IRQ, 0xe << 4); //second lowest priority
+   nvic_set_priority(NVIC_TIM2_IRQ, 0); //highest priority
 }
 
 void rtc_setup()

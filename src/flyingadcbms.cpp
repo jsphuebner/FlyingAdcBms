@@ -32,6 +32,13 @@
 #define ADC_RATE_60SPS  0x4
 #define ADC_RATE_15SPS  0x8
 
+#define HBRIDGE_DISCHARGE_VIA_LOWSIDE    0xF
+#define HBRIDGE_ALL_OFF                  0xA
+#define HBRIDGE_UOUTP_TO_GND_UOUTN_TO_5V 0xC
+#define HBRIDGE_UOUTP_TO_5V_UOUTN_TO_GND 0x3
+
+#define DELAY() for (volatile int _ctr = 0; _ctr < i2cdelay; _ctr++)
+
 uint8_t FlyingAdcBms::selectedChannel = 0;
 uint8_t FlyingAdcBms::previousChannel = 0;
 uint8_t FlyingAdcBms::balancerPins = 0;
@@ -138,16 +145,17 @@ FlyingAdcBms::BalanceStatus FlyingAdcBms::SetBalancing(BalanceCommand cmd)
    switch (cmd)
    {
    case BAL_OFF:
-      data[1] = 0xA; //turn off all FETs
+      data[1] = HBRIDGE_ALL_OFF;
+      //data[1] = selectedChannel & 1 ? 0xE : 0xB;
       break;
    case BAL_DISCHARGE:
-      data[1] = 0xF; //Discharge via low side FETs
+      data[1] = HBRIDGE_DISCHARGE_VIA_LOWSIDE;
       stt = STT_DISCHARGE;
       break;
    case BAL_CHARGE:
       //odd channel: connect UOUTP to GNDA and UOUTN to VCCA
       //even channel: connect UOUTP to VCCA and UOUTN to GNDA
-      data[1] = selectedChannel & 1 ? 0xC : 0x3;
+      data[1] = selectedChannel & 1 ? HBRIDGE_UOUTP_TO_GND_UOUTN_TO_5V : HBRIDGE_UOUTP_TO_5V_UOUTN_TO_GND;
       stt = selectedChannel & 1 ? STT_CHARGENEG : STT_CHARGEPOS;
    }
 
@@ -157,23 +165,32 @@ FlyingAdcBms::BalanceStatus FlyingAdcBms::SetBalancing(BalanceCommand cmd)
    return stt;
 }
 
-void FlyingAdcBms::BitBangI2CStartAddress(uint8_t address)
+void FlyingAdcBms::SendRecvI2C(uint8_t address, bool read, uint8_t* data, uint8_t len)
 {
-   DigIo::i2c_do.Clear();
-   for (volatile int i = 0; i < i2cdelay*2; i++);
+   if (lock) return;
+
+   lock = true;
+
+   BitBangI2CStart();
+
+   address <<= 1;
+   address |= read;
+
+   BitBangI2CByte(address, false);
+
+   for (int i = 0; i < len; i++)
+      data[i] = BitBangI2CByte(read ? 0xFF : data[i], i != (len - 1) && read);
+
+   BitBangI2CStop();
+
+   lock = false;
+}
+
+void FlyingAdcBms::BitBangI2CStart()
+{
+   DigIo::i2c_do.Clear(); //Generate start. First SDA low, then SCL
+   DELAY();
    DigIo::i2c_scl.Clear();
-
-   for (int i = 16; i >= 0; i--)
-   {
-      if (address & 0x80 || i < 1) DigIo::i2c_do.Set();
-      else DigIo::i2c_do.Clear();
-      for (volatile int j = 0; j < i2cdelay; j++);
-      DigIo::i2c_scl.Toggle();;
-      if (i & 1) address <<= 1;
-   }
-   for (volatile int i = 0; i < i2cdelay; i++);
-
-   DigIo::i2c_do.Set();
 }
 
 uint8_t FlyingAdcBms::BitBangI2CByte(uint8_t byte, bool ack)
@@ -181,24 +198,24 @@ uint8_t FlyingAdcBms::BitBangI2CByte(uint8_t byte, bool ack)
    uint8_t byteRead = 0;
 
    DigIo::i2c_scl.Clear();
-   for (volatile int i = 0; i < i2cdelay; i++);
+   DELAY();
 
    for (int i = 16; i >= 0; i--)
    {
       if (byte & 0x80 || (i < 1 && !ack)) DigIo::i2c_do.Set();
       else DigIo::i2c_do.Clear();
-      for (volatile int j = 0; j < i2cdelay; j++);
+      DELAY();
       DigIo::i2c_scl.Toggle();
       if (i & 1) {
-         byte <<= 1;
+         byte <<= 1; //get next bit at falling edge
       }
       else if (i > 0)
       {
          byteRead <<= 1;
-         byteRead |= DigIo::i2c_di.Get();
+         byteRead |= DigIo::i2c_di.Get(); //Read data at rising edge
       }
    }
-   for (volatile int i = 0; i < i2cdelay; i++);
+   DELAY();
 
    return byteRead;
 }
@@ -206,32 +223,12 @@ uint8_t FlyingAdcBms::BitBangI2CByte(uint8_t byte, bool ack)
 void FlyingAdcBms::BitBangI2CStop()
 {
    DigIo::i2c_scl.Clear();
-   for (volatile int i = 0; i < i2cdelay; i++);
+   DELAY();
    DigIo::i2c_do.Clear(); //data low
-   for (volatile int i = 0; i < i2cdelay; i++);
+   DELAY();
    DigIo::i2c_scl.Set();
-   for (volatile int i = 0; i < i2cdelay; i++);
+   DELAY();
    DigIo::i2c_do.Set(); //data high -> STOP
-   for (volatile int i = 0; i < i2cdelay; i++);
+   DELAY();
 }
 
-void FlyingAdcBms::SendRecvI2C(uint8_t address, bool read, uint8_t* data, uint8_t len)
-{
-   if (lock) return;
-
-   lock = true;
-
-   address <<= 1;
-   address |= read;
-
-   BitBangI2CStartAddress(address);
-
-   for (int i = 0; i < len; i++)
-   {
-      data[i] = BitBangI2CByte(read ? 0xFF : data[i], i != (len - 1) && read);
-   }
-
-   BitBangI2CStop();
-
-   lock = false;
-}

@@ -37,7 +37,7 @@ class FlyingAdcBms
 
    private:
       static void SendRecvI2C(uint8_t address, bool read, uint8_t* data, uint8_t len);
-      static void BitBangI2CStartAddress(uint8_t address);
+      static void BitBangI2CStart();
       static uint8_t BitBangI2CByte(uint8_t byte, bool ack);
       static void BitBangI2CStop();
 
