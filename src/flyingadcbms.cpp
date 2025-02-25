@@ -51,7 +51,7 @@ void FlyingAdcBms::Init()
 {
    uint8_t data[] = { 0x3, 0x0 };
    SendRecvI2C(DIO_ADDR, WRITE, data, 2);
-   gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, 0);
+   gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, GPIO0);
 }
 
 //Mux control words
