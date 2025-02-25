@@ -24,6 +24,7 @@
 #include "selftest.h"
 
 #define IS_FIRST_THRESH       1800
+#define IS_ENABLED_THRESH     500
 #define SDO_INDEX_PARAMS      0x2000
 #define BOOT_DELAY_CYCLES     5
 
@@ -153,7 +154,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
       }
       break;
    case RUN:
-      if (ABS(Param::GetFloat(Param::idcavg)) < 0.8f)
+      if (ABS(Param::GetFloat(Param::idcavg)) < 0.8f && !IsEnabled())
       {
          cycles++;
 
@@ -220,6 +221,13 @@ bool BmsFsm::IsFirst()
    int enableLevel = AnaIn::enalevel.Get();
 
    return isMain || enableLevel > IS_FIRST_THRESH;
+}
+
+bool BmsFsm::IsEnabled()
+{
+   int enableLevel = AnaIn::enalevel.Get();
+
+   return enableLevel > IS_ENABLED_THRESH;
 }
 
 void BmsFsm::MapCanSubmodule()

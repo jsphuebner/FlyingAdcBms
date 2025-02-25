@@ -124,7 +124,7 @@ void rtc_setup()
 {
    //Base clock is LSI/128 = 40 kHz
    //40 kHz / (39999 + 1) = 1Hz
-   rtc_auto_awake(RCC_LSI, 39999); //10ms tick
+   rtc_auto_awake(RCC_LSI, 39999); //1s tick
 }
 
 HwRev detect_hw()
