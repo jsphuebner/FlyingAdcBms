@@ -63,6 +63,11 @@ static void CalculateCurrentLimits()
    dischargeCurrentLimit *= BmsAlgo::LimitMinimumCellVoltage(Param::GetFloat(Param::umin), Param::GetFloat(Param::ucellmin));
    dischargeCurrentLimit *= BmsAlgo::HighTemperatureDerating(Param::GetFloat(Param::tempmax), 53);
    Param::SetFloat(Param::dischargelim, dischargeCurrentLimit);
+/*
+   if (Param::GetFloat(Param::umax) < (Param::GetFloat(Param::ucellmax) - 50))
+      DigIo::nextena_out.Set();
+   else if (Param::GetFloat(Param::umax) >= Param::GetFloat(Param::ucellmax))
+      DigIo::nextena_out.Clear();*/
 }
 
 static void CalculateSocSoh(BmsFsm::bmsstate stt, BmsFsm::bmsstate laststt)
@@ -175,7 +180,7 @@ static void RunSelfTest()
    {
       ErrorMessage::Post((ERROR_MESSAGE_NUM)(test + 1));
       Param::SetInt(Param::lasterr, test + 1);
-      Param::SetInt(Param::errchan, SelfTest::GetErrorChannel());
+      Param::SetInt(Param::errinfo, SelfTest::GetErrorChannel());
    }
 }
 

@@ -154,7 +154,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
       }
       break;
    case RUN:
-      if (ABS(Param::GetFloat(Param::idcavg)) < 0.8f && !IsEnabled())
+      if (ABS(Param::GetFloat(Param::idcavg)) < 0.8f)
       {
          cycles++;
 
@@ -178,7 +178,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
       }
 
       //After 2 hours turn off
-      if (cycles > 72000)
+      if (cycles > 72000 && !IsEnabled())
       {
          DigIo::selfena_out.Clear();
          DigIo::nextena_out.Clear();

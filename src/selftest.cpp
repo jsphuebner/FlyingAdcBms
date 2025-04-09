@@ -72,8 +72,10 @@ SelfTest::TestResult SelfTest::RunTestMuxOff()
 
       if (adc < 5) //We expect no voltage on the ADC
          return TestSuccess;
-      else
+      else {
+         errChannel = adc;
          return TestFailed;
+      }
    }
    return TestOngoing;
 }
@@ -93,8 +95,10 @@ SelfTest::TestResult SelfTest::RunTestBalancer()
    else if (cycleCounter == 2) {
       int adc = FlyingAdcBms::GetResult();
 
-      if (adc < 8190) //We expect the ADC to saturate
+      if (adc < 8190) { //We expect the ADC to saturate
+         errChannel = adc;
          return TestFailed;
+      }
    }
    else if (cycleCounter == 3) {
       FlyingAdcBms::SelectChannel(1); //this leads to negative voltage
@@ -106,8 +110,10 @@ SelfTest::TestResult SelfTest::RunTestBalancer()
       int adc = FlyingAdcBms::GetResult();
       FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_OFF);
 
-      if (adc < 8190) //We expect the ADC to saturate
+      if (adc < 8190) { //We expect the ADC to saturate
+         errChannel = adc;
          return TestFailed;
+      }
       else
          return TestSuccess;
    }

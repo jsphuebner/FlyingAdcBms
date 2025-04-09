@@ -39,7 +39,7 @@
  */
 
  //Define a version string of your firmware here
-#define VER 0.24.B
+#define VER 0.25.B
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
@@ -82,7 +82,7 @@
     PARAM_ENTRY(CAT_SENS,    idcgain,     "dig/A",  -1000,   1000,   10,     6   ) \
     PARAM_ENTRY(CAT_SENS,    idcofs,      "dig",    -4095,   4095,   0,      7   ) \
     PARAM_ENTRY(CAT_SENS,    idcmode,     IDCMODES,  0,      3,      0,      8   ) \
-    PARAM_ENTRY(CAT_SENS,    tempsns,     TEMPSNS,   0,      3,     -1,      52  ) \
+    PARAM_ENTRY(CAT_SENS,    tempsns,     TEMPSNS,   0,      3,      0,      52  ) \
     PARAM_ENTRY(CAT_SENS,    tempres,     "Ohm",     10,     500000, 10000,  50  ) \
     PARAM_ENTRY(CAT_SENS,    tempbeta,    "",        1,      100000, 3900,   51  ) \
     PARAM_ENTRY(CAT_COMM,    pdobase,     "",        0,      2047,   500,    10  ) \
@@ -94,7 +94,7 @@
     VALUE_ENTRY(hwrev,       HWREVS, 2104 ) \
     VALUE_ENTRY(opmode,      OPMODES,2000 ) \
     VALUE_ENTRY(lasterr,     errorListString,2101 ) \
-    VALUE_ENTRY(errchan,     "",     2102 ) \
+    VALUE_ENTRY(errinfo,     "",     2102 ) \
     VALUE_ENTRY(modaddr,     "",     2045 ) \
     VALUE_ENTRY(modnum,      "",     2046 ) \
     VALUE_ENTRY(totalcells,  "",     2074 ) \

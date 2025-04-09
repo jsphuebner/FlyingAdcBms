@@ -27,7 +27,7 @@ BmsFsm* BmsIO::bmsFsm;
 
 void BmsIO::ReadCellVoltages()
 {
-   int totalBalanceCycles = 30;
+   const int totalBalanceCycles = 30;
    static uint8_t chan = 0, balanceCycles = 0;
    static float sum = 0, min, max, avg;
    int balMode = Param::GetInt(Param::balmode);
@@ -96,6 +96,8 @@ void BmsIO::ReadCellVoltages()
    if (balanceCycles == totalBalanceCycles)
    {
       float gain = Param::GetFloat(Param::gain);
+      int numChan = Param::GetInt(Param::numchan);
+      bool even = (chan & 1) == 0;
 
       if (chan == 0)
          gain *= 1 + Param::GetFloat(Param::correction0) / 1000000.0f;
@@ -113,7 +115,31 @@ void BmsIO::ReadCellVoltages()
       max = MAX(max, udc);
       sum += udc;
 
-      if ((chan + 1) >= Param::GetInt(Param::numchan))
+      //First we sweep across all even channels: 0, 2, 4,...
+      if (even && (chan + 2) < numChan)
+         chan += 2;
+      //After reaching the furthest even channel (say 12) we either change over to a higher odd channel
+      else if (even && (chan + 1) < numChan)
+         chan++;
+      //or lower odd channel
+      else if (even)
+         chan--;
+      //Now we sweep across all odd channels until we reach 1
+      else if (chan > 1)
+         chan -= 2;
+      //We have no reached chan 1. Accumulate values and restart at chan 0
+      else
+      {
+         chan = 0;
+         avg = sum / Param::GetInt(Param::numchan);
+         Accumulate(sum, min, max, avg);
+
+         min = 8000;
+         max = 0;
+         sum = 0;
+      }
+
+      /*if ((chan + 1) >= Param::GetInt(Param::numchan))
       {
          chan = 0;
          avg = sum / Param::GetInt(Param::numchan);
@@ -126,7 +152,7 @@ void BmsIO::ReadCellVoltages()
       else
       {
          chan++;
-      }
+      }*/
 
       FlyingAdcBms::SelectChannel(chan);
       FlyingAdcBms::StartAdc();
