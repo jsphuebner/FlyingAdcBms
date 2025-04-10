@@ -35,6 +35,13 @@ CFLAGS		= -Os -Wall -Wextra -Iinclude/ -Ilibopeninv/include -Ilibopencm3/include
 CPPFLAGS    = -Og -ggdb -Wall -Wextra -Iinclude/ -Ilibopeninv/include -Ilibopencm3/include \
             -fno-common -std=c++11 -pedantic -DSTM32F1 -DCAN_PERIPH_SPEED=32 -DCAN_SIGNED=1 -DCAN_EXT -D$(HW) \
 				-ffunction-sections -fdata-sections -fno-builtin -fno-rtti -fno-exceptions -fno-unwind-tables -mcpu=cortex-m3 -mthumb
+# Check if the variable GITHUB_RUN_NUMBER exists. When running on the github actions running, this
+# variable is automatically available.
+# Create a compiler define with the content of the variable. Or, if it does not exist, use replacement value 0.
+EXTRACOMPILERFLAGS  = $(shell \
+	 if [ -z "$$GITHUB_RUN_NUMBER" ]; then echo "-DGITHUB_RUN_NUMBER=0"; else echo "-DGITHUB_RUN_NUMBER=$$GITHUB_RUN_NUMBER"; fi \
+	 )
+
 LDSCRIPT	  = linker.ld
 LDFLAGS    = -Llibopencm3/lib -T$(LDSCRIPT) -march=armv7 -nostartfiles -Wl,--gc-sections,-Map,linker.map
 OBJSL		  = main.o hwinit.o stm32scheduler.o params.o  \
@@ -99,7 +106,7 @@ $(OUT_DIR)/%.o: %.c Makefile
 
 $(OUT_DIR)/%.o: %.cpp Makefile
 	@printf "  CPP     $(subst $(shell pwd)/,,$(@))\n"
-	$(Q)$(CPP) $(CPPFLAGS) -MMD -MP -o $@ -c $<
+	$(Q)$(CPP) $(CPPFLAGS) $(EXTRACOMPILERFLAGS) -MMD -MP -o $@ -c $<
 
 clean:
 	@printf "  CLEAN   ${OUT_DIR}\n"

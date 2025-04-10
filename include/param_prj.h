@@ -39,7 +39,7 @@
  */
 
  //Define a version string of your firmware here
-#define VER 0.25.B
+#define VERSION 0.25
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
@@ -206,7 +206,17 @@
 #define CAT_BAT      "Battery Characteristics"
 #define CAT_LIM      "Battery Limits"
 
-#define VERSTR STRINGIFY(4=VER)
+#define PARAM_ID_SUM_START_OFFSET GITHUB_RUN_NUMBER
+
+#if GITHUB_RUN_NUMBER == 0 //local build
+#define VER(G) VERSION.R
+#else //github runner build
+#define VER(G) VERSION.##G.B
+#endif
+
+#define VER2(G) VER(G)
+
+#define VERSTR STRINGIFY(4=VER2(GITHUB_RUN_NUMBER))
 
 /***** enums ******/
 
