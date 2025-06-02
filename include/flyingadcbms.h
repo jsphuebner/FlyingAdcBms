@@ -41,7 +41,7 @@ class FlyingAdcBms
       static uint8_t BitBangI2CByte(uint8_t byte, bool ack);
       static void BitBangI2CStop();
 
-      static uint8_t selectedChannel, previousChannel, balancerPins, i2cdelay;
+      static uint8_t selectedChannel, previousChannel, i2cdelay;
 };
 
 #endif // FLYINGADCBMS_H

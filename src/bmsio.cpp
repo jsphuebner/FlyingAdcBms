@@ -24,6 +24,37 @@
 #include "flyingadcbms.h"
 
 BmsFsm* BmsIO::bmsFsm;
+int BmsIO::muxRequest = -1;
+
+/** \brief Mux control function. Must be called in 2 ms interval */
+void BmsIO::SwitchMux()
+{
+   static int channel = -1;
+   static bool startAdc = false;
+
+   //t=0 ms: On a mux change request first completely turn off mux
+   if (muxRequest >= 0)
+   {
+      FlyingAdcBms::MuxOff();
+      channel = muxRequest;
+      muxRequest = -1;
+   }
+   //t=2 ms: switch to requested channel
+   else if (channel >= 0)
+   {
+      FlyingAdcBms::SelectChannel(channel);
+      channel = -1;
+      startAdc = true;
+   }
+   //t=4 ms: start ADC
+   else if (startAdc)
+   {
+      FlyingAdcBms::StartAdc();
+      startAdc = false;
+   }
+   //t=21 ms: ADC conversion is finished
+   //t=25 ms: ADC conversion result is read
+}
 
 void BmsIO::ReadCellVoltages()
 {
@@ -138,24 +169,8 @@ void BmsIO::ReadCellVoltages()
          max = 0;
          sum = 0;
       }
-
-      /*if ((chan + 1) >= Param::GetInt(Param::numchan))
-      {
-         chan = 0;
-         avg = sum / Param::GetInt(Param::numchan);
-         Accumulate(sum, min, max, avg);
-
-         min = 8000;
-         max = 0;
-         sum = 0;
-      }
-      else
-      {
-         chan++;
-      }*/
-
-      FlyingAdcBms::SelectChannel(chan);
-      FlyingAdcBms::StartAdc();
+      //This instructs the SwitchMux task to change channel, with dead time
+      muxRequest = chan;
    }
 }
 

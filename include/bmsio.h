@@ -22,13 +22,14 @@
 #include "bmsfsm.h"
 #include "flyingadcbms.h"
 
-#define NO_TEMP    128
+#define NO_TEMP    127
 
 
 class BmsIO
 {
    public:
       static void ReadTemperatures();
+      static void SwitchMux();
       static void ReadCellVoltages();
       static void TestReadCellVoltage(int chan, FlyingAdcBms::BalanceCommand cmd);
       static void MeasureCurrent();
@@ -37,6 +38,7 @@ class BmsIO
    private:
       static void Accumulate(float sum, float min, float max, float avg);
       static BmsFsm* bmsFsm;
+      static int muxRequest;
 };
 
 #endif // BMSIO_H

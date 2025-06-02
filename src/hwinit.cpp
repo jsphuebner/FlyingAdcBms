@@ -39,7 +39,7 @@
 */
 void clock_setup(void)
 {
-   RCC_CLOCK_SETUP();
+   rcc_clock_setup_pll(&rcc_hsi_configs[RCC_CLOCK_HSI_64MHZ]);
 
    //The reset value for PRIGROUP (=0) is not actually a defined
    //value. Explicitly set 16 preemtion priorities
@@ -56,7 +56,6 @@ void clock_setup(void)
    rcc_periph_clock_enable(RCC_CAN1); //CAN
    rcc_periph_clock_enable(RCC_AFIO); //Needed to disable JTAG!
    rcc_periph_clock_enable(RCC_SPI1); //Needed on V1 HW
-   rcc_periph_clock_enable(RCC_SPI2);
 }
 
 void spi_setup()
@@ -134,11 +133,12 @@ HwRev detect_hw()
    #endif // HWV1
 
    HwRev hwrev = HW_UNKNOWN;
-   //configure as input with pull-uo
+   //configure as input with pull-up
    gpio_set_mode(GPIOB, GPIO_MODE_INPUT, GPIO_CNF_INPUT_PULL_UPDOWN, GPIO9 | GPIO10 | GPIO11);
    gpio_set(GPIOB, GPIO9 | GPIO10 | GPIO11);
    uint16_t revisionInput = gpio_get(GPIOB, GPIO9 | GPIO10 | GPIO11);
    const uint16_t rev23 = GPIO10 | GPIO11;
+   const uint16_t rev24 = GPIO9 | GPIO11;
 
    if (revisionInput == (GPIO9 | GPIO10 | GPIO11))
    {
@@ -167,6 +167,8 @@ HwRev detect_hw()
    }
    else if (revisionInput == rev23)
       hwrev = HW_23;
+   else if (revisionInput == rev24)
+      hwrev = HW_24;
 
    return hwrev;
 }

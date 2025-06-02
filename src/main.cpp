@@ -284,6 +284,7 @@ extern "C" int main(void)
 
    s.AddTask(BmsIO::MeasureCurrent, 5);
    s.AddTask(ReadCellVoltages, 25);
+   s.AddTask(BmsIO::SwitchMux, 2); //This must added after ReadCellVoltages() to avoid an additional 2 ms delay
    s.AddTask(Ms100Task, 100);
 
    Param::SetInt(Param::hwrev, hwRev);

@@ -41,7 +41,6 @@
 
 uint8_t FlyingAdcBms::selectedChannel = 0;
 uint8_t FlyingAdcBms::previousChannel = 0;
-uint8_t FlyingAdcBms::balancerPins = 0;
 uint8_t FlyingAdcBms::i2cdelay = 30;
 static bool lock = false;
 
@@ -88,7 +87,6 @@ void FlyingAdcBms::MuxOff()
 {
    //Turn off mux
    gpio_clear(GPIOB, 255);
-   SetBalancing(BAL_OFF);
 }
 
 void FlyingAdcBms::SelectChannel(uint8_t channel)
@@ -100,19 +98,12 @@ void FlyingAdcBms::SelectChannel(uint8_t channel)
 
    selectedChannel = channel;
 
-   //This creates some delay between switching channels
-   SendRecvI2C(DIO_ADDR, READ, &balancerPins, 1);
-   SetBalancing(BAL_OFF);
-
    //Example Chan8:  turn on G8 (=even mux word 4) and G9 (odd mux word 4)
    //Example Chan9:  turn on G10 (=even mux word 5) and G9 (odd mux word 4)
    //Example Chan15: turn on G16 via GPIOB3 (=even mux word 8) and G15 via Decoder (odd mux word 7)
    uint8_t evenMuxWord = (channel / 2) + (channel & 1);
    uint8_t oddMuxWord = (channel / 2) << 4;
    gpio_set(GPIOB, evenMuxWord | oddMuxWord | GPIO7);
-
-   //More delay for low pass to settle
-   SendRecvI2C(DIO_ADDR, READ, &balancerPins, 1);
 }
 #endif // V1HW
 
@@ -146,7 +137,6 @@ FlyingAdcBms::BalanceStatus FlyingAdcBms::SetBalancing(BalanceCommand cmd)
    {
    case BAL_OFF:
       data[1] = HBRIDGE_ALL_OFF;
-      //data[1] = selectedChannel & 1 ? 0xE : 0xB;
       break;
    case BAL_DISCHARGE:
       data[1] = HBRIDGE_DISCHARGE_VIA_LOWSIDE;
@@ -159,8 +149,7 @@ FlyingAdcBms::BalanceStatus FlyingAdcBms::SetBalancing(BalanceCommand cmd)
       stt = selectedChannel & 1 ? STT_CHARGENEG : STT_CHARGEPOS;
    }
 
-   if (data[1] != balancerPins)
-      SendRecvI2C(DIO_ADDR, WRITE, data, 2);
+   SendRecvI2C(DIO_ADDR, WRITE, data, 2);
 
    return stt;
 }
