@@ -60,7 +60,7 @@ void BmsIO::ReadCellVoltages()
 {
    const int totalBalanceCycles = 30;
    static uint8_t chan = 0, balanceCycles = 0;
-   static float sum = 0, min, max, avg;
+   static float sum = 0, min = 8000, max = 0;
    int balMode = Param::GetInt(Param::balmode);
    bool balance = Param::GetInt(Param::opmode) == BmsFsm::IDLE && Param::GetFloat(Param::uavg) > Param::GetFloat(Param::ubalance) && BAL_OFF != balMode;
    FlyingAdcBms::BalanceStatus bstt;
@@ -158,12 +158,11 @@ void BmsIO::ReadCellVoltages()
       //Now we sweep across all odd channels until we reach 1
       else if (chan > 1)
          chan -= 2;
-      //We have no reached chan 1. Accumulate values and restart at chan 0
+      //We have now reached chan 1. Accumulate values and restart at chan 0
       else
       {
          chan = 0;
-         avg = sum / Param::GetInt(Param::numchan);
-         Accumulate(sum, min, max, avg);
+         Accumulate(sum, min, max, sum / numChan);
 
          min = 8000;
          max = 0;

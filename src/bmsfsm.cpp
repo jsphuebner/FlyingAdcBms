@@ -233,17 +233,17 @@ bool BmsFsm::IsEnabled()
 void BmsFsm::MapCanSubmodule()
 {
    int id = pdobase + ourIndex + 1; //main module has two PDO messages
-   canMap->AddSend(Param::umin0, id, 0, 13, 1);
-   canMap->AddSend(Param::umax0, id, 16, 13, 1);
+   canMap->AddSend(Param::umin0, id, 0, 14, 1);
+   canMap->AddSend(Param::umax0, id, 16, 14, 1);
    canMap->AddSend(Param::counter, id, 30, 2, 1);
-   canMap->AddSend(Param::uavg0, id, 32, 13, 1);
+   canMap->AddSend(Param::uavg0, id, 32, 14, 1);
    canMap->AddSend(Param::tempmin0, id, 48, 8, 1);
    canMap->AddSend(Param::tempmax0, id, 56, 8, 1);
 
    canMap->AddRecv(Param::idcavg, pdobase, 32, 16, 0.1);
-   canMap->AddRecv(Param::umin, pdobase + 1, 0, 13, 1);
-   canMap->AddRecv(Param::umax, pdobase + 1, 16, 13, 1);
-   canMap->AddRecv(Param::uavg, pdobase + 1, 32, 13, 1);
+   canMap->AddRecv(Param::umin, pdobase + 1, 0, 14, 1);
+   canMap->AddRecv(Param::umax, pdobase + 1, 16, 14, 1);
+   canMap->AddRecv(Param::uavg, pdobase + 1, 32, 14, 1);
 }
 
 void BmsFsm::MapCanMainmodule()
@@ -251,9 +251,9 @@ void BmsFsm::MapCanMainmodule()
    for (int i = 1; i < GetMaxSubmodules(); i++)
    {
       int id = pdobase + i + 1;
-      canMap->AddRecv(GetDataItem(Param::umin0, i), id, 0, 13, 1);
-      canMap->AddRecv(GetDataItem(Param::umax0, i), id, 16, 13, 1);
-      canMap->AddRecv(GetDataItem(Param::uavg0, i), id, 32, 13, 1);
+      canMap->AddRecv(GetDataItem(Param::umin0, i), id, 0, 14, 1);
+      canMap->AddRecv(GetDataItem(Param::umax0, i), id, 16, 14, 1);
+      canMap->AddRecv(GetDataItem(Param::uavg0, i), id, 32, 14, 1);
       canMap->AddRecv(GetDataItem(Param::tempmin0, i), id, 48, 8, 1);
       canMap->AddRecv(GetDataItem(Param::tempmax0, i), id, 56, 8, 1);
    }
@@ -261,10 +261,10 @@ void BmsFsm::MapCanMainmodule()
    int id = Param::GetInt(Param::pdobase);
 
    //we don't expose our local accumulated values but the "global" ones
-   canMap->AddSend(Param::umin, id + 1, 0, 13, 1);
-   canMap->AddSend(Param::umax, id + 1, 16, 13, 1);
+   canMap->AddSend(Param::umin, id + 1, 0, 14, 1);
+   canMap->AddSend(Param::umax, id + 1, 16, 14, 1);
    canMap->AddSend(Param::counter, id + 1, 30, 2, 1);
-   canMap->AddSend(Param::uavg, id + 1, 32, 13, 1);
+   canMap->AddSend(Param::uavg, id + 1, 32, 14, 1);
    canMap->AddSend(Param::tempmin, id + 1, 48, 8, 1);
    canMap->AddSend(Param::tempmax, id + 1, 56, 8, 1);
 
