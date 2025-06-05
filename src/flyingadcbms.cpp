@@ -77,9 +77,10 @@ void FlyingAdcBms::Init()
 {
    uint8_t data[2] = { 0x3 /* pin mode register */, 0x0 /* All pins as output */};
    SendRecvI2C(DIO_ADDR, WRITE, data, 2);
+   gpio_clear(GPIOB, 255);
    gpio_set_mode(GPIOB, GPIO_MODE_OUTPUT_50_MHZ, GPIO_CNF_OUTPUT_PUSHPULL, 255);
 
-   if (hwRev == HW_23)
+   if (hwRev == HW_23 || hwRev == HW_24)
       i2cdelay = 5;
 }
 
@@ -129,7 +130,8 @@ float FlyingAdcBms::GetResult()
 FlyingAdcBms::BalanceStatus FlyingAdcBms::SetBalancing(BalanceCommand cmd)
 {
    BalanceStatus stt = STT_OFF;
-   uint8_t data[2];
+   uint8_t data[2] = { 0x3 /* pin mode register */, 0x0 /* All pins as output */};
+   SendRecvI2C(DIO_ADDR, WRITE, data, 2);
 
    data[0] = 0x1; //output port register
 

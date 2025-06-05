@@ -103,7 +103,7 @@ static void CalculateSocSoh(BmsFsm::bmsstate stt, BmsFsm::bmsstate laststt)
          /* Remember SoC at the point of this estimation
             in order to be prepared for the next estimation */
          estimatedSocAtValidSoh = estimatedSoc;
-         BmsAlgo::SetNominalCapacity(Param::GetFloat(Param::nomcap) * soh / 100.0f);
+         //BmsAlgo::SetNominalCapacity(Param::GetFloat(Param::nomcap) * soh / 100.0f);
       }
    }
 
