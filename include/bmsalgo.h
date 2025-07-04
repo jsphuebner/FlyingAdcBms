@@ -28,7 +28,7 @@ class BmsAlgo
       static float EstimateSocFromVoltage(float lowestVoltage);
       static float CalculateSocFromIntegration(float lastSoc, float asDiff);
       static float CalculateSoH(float lastSoc, float newSoc, float asDiff);
-      static float GetChargeCurrent(float maxCellVoltage);
+      static float GetChargeCurrent(float maxCellVoltage, float hystVoltage, float icutoff);
       static float LimitMinimumCellVoltage(float minVoltage, float limit);
       static float LowTemperatureDerating(float lowTemp);
       static float HighTemperatureDerating(float highTemp, float maxTemp);
@@ -40,6 +40,7 @@ class BmsAlgo
       static float nominalCapacity;
       static uint16_t voltageToSoc[11];
       static PiController cvControllers[3]; //Support 3 consecutive CC/CV curves
+      static bool full;
 };
 
 #endif // BMSALGO_H

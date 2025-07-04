@@ -54,7 +54,9 @@ HwRev hwRev;
 
 static void CalculateCurrentLimits()
 {
-   float chargeCurrentLimit = BmsAlgo::GetChargeCurrent(Param::GetFloat(Param::umax));
+   float chargeCurrentLimit = BmsAlgo::GetChargeCurrent(Param::GetFloat(Param::umax),
+                                                        Param::GetFloat(Param::ucellhyst),
+                                                        Param::GetFloat(Param::icutoff));
    chargeCurrentLimit *= BmsAlgo::LowTemperatureDerating(Param::GetFloat(Param::tempmin));
    chargeCurrentLimit *= BmsAlgo::HighTemperatureDerating(Param::GetFloat(Param::tempmax), 50);
    Param::SetFloat(Param::chargelim, chargeCurrentLimit);

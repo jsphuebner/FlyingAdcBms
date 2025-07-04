@@ -33,6 +33,7 @@
 #define ADC_RATE_15SPS  0x8
 
 #define HBRIDGE_DISCHARGE_VIA_LOWSIDE    0xF
+#define HBRIDGE_DISCHARGE_VIA_HIGHSIDE   0x0
 #define HBRIDGE_ALL_OFF                  0xA
 #define HBRIDGE_UOUTP_TO_GND_UOUTN_TO_5V 0xC
 #define HBRIDGE_UOUTP_TO_5V_UOUTN_TO_GND 0x3
@@ -141,7 +142,10 @@ FlyingAdcBms::BalanceStatus FlyingAdcBms::SetBalancing(BalanceCommand cmd)
       data[1] = HBRIDGE_ALL_OFF;
       break;
    case BAL_DISCHARGE:
-      data[1] = HBRIDGE_DISCHARGE_VIA_LOWSIDE;
+      if (hwRev == HW_24) //has inline resistors on all channels
+         data[1] = HBRIDGE_DISCHARGE_VIA_HIGHSIDE;
+      else
+         data[1] = HBRIDGE_DISCHARGE_VIA_LOWSIDE;
       stt = STT_DISCHARGE;
       break;
    case BAL_CHARGE:

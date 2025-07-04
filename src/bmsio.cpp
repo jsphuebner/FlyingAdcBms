@@ -214,11 +214,11 @@ void BmsIO::MeasureCurrent()
 
       current = (rawCurrent - idcofs) / idcgain;
 
-      if (current < -0.8f)
+      if (current < -Param::GetFloat(Param::idlethresh))
       {
          amsOut += -FP_FROMFLT(current);
       }
-      else if (current > 0.8f)
+      else if (current > Param::GetFloat(Param::idlethresh))
       {
          amsIn += FP_FROMFLT(current);
       }

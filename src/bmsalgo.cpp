@@ -23,6 +23,7 @@ float BmsAlgo::nominalCapacity;
 //voltage to state of charge            0%    10%   20%   30%   40%   50%   60%   70%   80%   90%   100%
 uint16_t BmsAlgo::voltageToSoc[] =    { 3300, 3400, 3450, 3500, 3560, 3600, 3700, 3800, 4000, 4100, 4200 };
 PiController BmsAlgo::cvControllers[3];
+bool BmsAlgo::full;
 
 /** \brief Calculates SoC from a starting point adding the charge through the battery
  *
@@ -100,7 +101,7 @@ float BmsAlgo::EstimateSocFromVoltage(float lowestVoltage)
  *         The result is capped to ensure it does not exceed the defined current limits
  *         and is non-negative.
  */
-float BmsAlgo::GetChargeCurrent(float maxCellVoltage)
+float BmsAlgo::GetChargeCurrent(float maxCellVoltage, float hystVoltage, float icutoff)
 {
    float result;
 
@@ -113,13 +114,19 @@ float BmsAlgo::GetChargeCurrent(float maxCellVoltage)
     *
     */
 
-   float cv1Result = cvControllers[0].Run(FP_FROMFLT(maxCellVoltage));
-   float cv2Result = cvControllers[1].Run(FP_FROMFLT(maxCellVoltage));
-   float cv3Result = cvControllers[2].Run(FP_FROMFLT(maxCellVoltage));
+   float cv1Result = cvControllers[0].Run(FP_FROMFLT(maxCellVoltage / 10));
+   float cv2Result = cvControllers[1].Run(FP_FROMFLT(maxCellVoltage / 10));
+   float cv3Result = cvControllers[2].Run(FP_FROMFLT(maxCellVoltage / 10));
 
    result = MAX(cv1Result, MAX(cv2Result, cv3Result));
 
-   return result;
+   if (result < icutoff)
+      full = true;
+
+   if (maxCellVoltage < hystVoltage)
+      full = false;
+
+   return full ? 0 : result;
 }
 
 /**
@@ -241,9 +248,9 @@ void BmsAlgo::SetCCCVCurve(uint8_t idx, float current, uint16_t voltage)
 {
    if (idx > 2) return;
 
-   cvControllers[idx].SetGains(3, 3);
+   cvControllers[idx].SetGains(1, 1);
    cvControllers[idx].SetCallingFrequency(10);
-   cvControllers[idx].SetRef(FP_FROMINT(voltage));
+   cvControllers[idx].SetRef(FP_FROMINT(voltage) / 10);
    cvControllers[idx].SetMinMaxY(0, current);
    cvControllers[idx].ResetIntegrator();
 }

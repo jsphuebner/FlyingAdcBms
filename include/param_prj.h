@@ -39,14 +39,14 @@
  */
 
  //Define a version string of your firmware here
-#define VERSION 0.26
+#define VERSION 0.28
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 55
+//Next param id (increase when adding new parameter!): 58
 //Next value Id: 2105
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
@@ -58,15 +58,18 @@
     PARAM_ENTRY(CAT_BMS,     balmode,     BALMODE,   0,      3,      0,      5   ) \
     PARAM_ENTRY(CAT_BMS,     ubalance,    "mV",      0,      4500,   4500,   30  ) \
     PARAM_ENTRY(CAT_BMS,     idlewait,    "s",       0,      100000, 60,     12  ) \
+    PARAM_ENTRY(CAT_BMS,     idlethresh,  "A",       0,      10,     0.5,    55  ) \
     PARAM_ENTRY(CAT_BAT,     dischargemax,"A",       1,      2047,   200,    32  ) \
     PARAM_ENTRY(CAT_BAT,     nomcap,      "Ah",      0,      1000,   100,    9   ) \
     PARAM_ENTRY(CAT_BAT,     icc1,        "A",       1,      2000,   50,     43  ) \
     PARAM_ENTRY(CAT_BAT,     icc2,        "A",       1,      2000,   30,     44  ) \
     PARAM_ENTRY(CAT_BAT,     icc3,        "A",       1,      2000,   20,     45  ) \
+    PARAM_ENTRY(CAT_BAT,     icutoff,     "A",       1,      200,    2,      57  ) \
     PARAM_ENTRY(CAT_BAT,     ucv1,        "mV",      3000,   4500,   3900,   46  ) \
     PARAM_ENTRY(CAT_BAT,     ucv2,        "mV",      3000,   4500,   4000,   47  ) \
     PARAM_ENTRY(CAT_BAT,     ucellmax,    "mV",      1000,   4500,   4200,   29  ) \
     PARAM_ENTRY(CAT_BAT,     ucellmin,    "mV",      1000,   4500,   3300,   28  ) \
+    PARAM_ENTRY(CAT_BAT,     ucellhyst,   "mV",      1000,   4500,   4150,   56  ) \
     PARAM_ENTRY(CAT_BAT,     ucell0soc,   "mV",      2000,   4500,   3300,   17  ) \
     PARAM_ENTRY(CAT_BAT,     ucell10soc,  "mV",      2000,   4500,   3400,   18  ) \
     PARAM_ENTRY(CAT_BAT,     ucell20soc,  "mV",      2000,   4500,   3450,   19  ) \

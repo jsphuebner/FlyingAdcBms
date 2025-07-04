@@ -154,7 +154,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
       }
       break;
    case RUN:
-      if (ABS(Param::GetFloat(Param::idcavg)) < 0.8f)
+      if (ABS(Param::GetFloat(Param::idcavg)) < Param::GetFloat(Param::idlethresh))
       {
          cycles++;
 
@@ -172,7 +172,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
    case IDLE:
       cycles++;
 
-      if (ABS(Param::GetFloat(Param::idcavg)) > 0.8f)
+      if (ABS(Param::GetFloat(Param::idcavg)) > Param::GetFloat(Param::idlethresh))
       {
          return RUN;
       }
