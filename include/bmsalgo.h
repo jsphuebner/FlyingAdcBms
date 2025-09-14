@@ -29,17 +29,20 @@ class BmsAlgo
       static float CalculateSocFromIntegration(float lastSoc, float asDiff);
       static float CalculateSoH(float lastSoc, float newSoc, float asDiff);
       static float GetChargeCurrent(float maxCellVoltage, float hystVoltage, float icutoff);
-      static float LimitMinimumCellVoltage(float minVoltage, float limit);
+      static float LimitMinimumCellVoltage(float minVoltage);
       static float LowTemperatureDerating(float lowTemp);
       static float HighTemperatureDerating(float highTemp, float maxTemp);
       static void SetNominalCapacity(float c) { nominalCapacity = c; }
       static void SetSocLookupPoint(uint8_t soc, uint16_t voltage);
       static void SetCCCVCurve(uint8_t idx, float current, uint16_t voltage);
+      static void SetMinVoltage(uint32_t voltage, float maxCurrent);
+      static void SetControllerGains(float kp, float ki);
 
    private:
       static float nominalCapacity;
       static uint16_t voltageToSoc[11];
-      static PiController cvControllers[3]; //Support 3 consecutive CC/CV curves
+      static PiControllerFloat cvControllers[3]; //Support 3 consecutive CC/CV curves
+      static PiControllerFloat cellMinController;
       static bool full;
 };
 

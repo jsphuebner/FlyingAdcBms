@@ -37,7 +37,8 @@ void BmsAlgoTest::TestCaseSetup()
       BmsAlgo::SetSocLookupPoint(i * 10, socLookup[i]);
 
    BmsAlgo::SetNominalCapacity(100);
-
+   BmsAlgo::SetMinVoltage(3300, 100);
+   BmsAlgo::SetControllerGains(1, 1);
    BmsAlgo::SetCCCVCurve(0, 400, 3900);
    BmsAlgo::SetCCCVCurve(1, 200, 4100);
    BmsAlgo::SetCCCVCurve(2, 100, 4200);
@@ -80,8 +81,8 @@ static void TestCalculateSoH()
 static void TestGetChargeCurrent1()
 {
    float current;
-   for (int i = 0; i < 10; i++) //run 10 loops for integrator to reach steady state
-      current = BmsAlgo::GetChargeCurrent(3800); //100 mV away from CV point
+   for (int i = 0; i < 30; i++) //run 20 loops for integrator to reach steady state
+      current = BmsAlgo::GetChargeCurrent(3800, 3800, 0); //100 mV away from CV point
    ASSERT(current == 400);
 }
 
@@ -89,31 +90,37 @@ static void TestGetChargeCurrent2()
 {
    float current;
 
-   for (int i = 0; i < 200; i++) //run 200 loops (20s) for integrator to reach steady state
-      current = BmsAlgo::GetChargeCurrent(3850 + current * 0.15); //simulate internal resistance
-   ASSERT(current == 333); //333A because 3850 + 333 * 015 == 3900
+   for (int i = 0; i < 500; i++) //run 200 loops (20s) for integrator to reach steady state
+      current = BmsAlgo::GetChargeCurrent(3850 + current * 0.15, 4200, 0); //simulate internal resistance
+   ASSERT(current == 333); //333A because 3850 + 333 * 0.15 == 3900
 
-   for (int i = 0; i < 10; i++) //run 10 loops (1s) for integrator to reach steady state
-      current = BmsAlgo::GetChargeCurrent(3900 + current * 0.15); //simulate internal resistance
+   for (int i = 0; i < 30; i++) //run 10 loops (1s) for integrator to reach steady state
+      current = BmsAlgo::GetChargeCurrent(3900 + current * 0.15, 4200, 0); //simulate internal resistance
    ASSERT(current == 200); //in second CCCV stage
 
-   for (int i = 0; i < 50; i++) //run 50 loops (5s) for integrator to reach steady state
-      current = BmsAlgo::GetChargeCurrent(4205 + current * 0.15); //simulate internal resistance
-   ASSERT(current == 0); //333A because 3850 + 333 * 015 == 3900
+   for (int i = 0; i < 150; i++) //run 50 loops (5s) for integrator to reach steady state
+      current = BmsAlgo::GetChargeCurrent(4205 + current * 0.15, 4200, 0); //simulate internal resistance
+   ASSERT(current == 0); //333A because 3850 + 333 * 0.15 == 3900
 }
 
 static void TestLimitMinimumCellVoltage()
 {
-   float factor = BmsAlgo::LimitMinimumCellVoltage(3300, 3300);
-   ASSERT(factor == 0);
-   factor = BmsAlgo::LimitMinimumCellVoltage(3200, 3300);
-   ASSERT(factor == 0);
-   factor = BmsAlgo::LimitMinimumCellVoltage(3350, 3300);
-   ASSERT(factor == 1);
-   factor = BmsAlgo::LimitMinimumCellVoltage(3325, 3300);
-   ASSERT(factor == 0.5);
-   factor = BmsAlgo::LimitMinimumCellVoltage(4200, 3300);
-   ASSERT(factor == 1);
+   float current;
+   for (int i = 0; i < 50; i++) //run 50 loops (5s) for integrator to reach steady state
+      current = BmsAlgo::LimitMinimumCellVoltage(3300);
+   ASSERT(current == 0);
+
+   for (int i = 0; i < 50; i++) //run 50 loops (5s) for integrator to reach steady state
+      current = BmsAlgo::LimitMinimumCellVoltage(3200);
+   ASSERT(current == 0);
+
+   for (int i = 0; i < 500; i++) //run 50 loops (5s) for integrator to reach steady state
+      current = BmsAlgo::LimitMinimumCellVoltage(3310 - current * 0.15); //simulate internal resistance
+   ASSERT(current == 67); //67A because 3310 + 67 * 0.15 == 3300
+
+   for (int i = 0; i < 50; i++) //run 50 loops (5s) for integrator to reach steady state
+      current = BmsAlgo::LimitMinimumCellVoltage(4200);
+   ASSERT(current == 100);
 }
 
 static void TestLowTemperatureDerating()

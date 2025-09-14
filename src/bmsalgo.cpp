@@ -22,7 +22,8 @@
 float BmsAlgo::nominalCapacity;
 //voltage to state of charge            0%    10%   20%   30%   40%   50%   60%   70%   80%   90%   100%
 uint16_t BmsAlgo::voltageToSoc[] =    { 3300, 3400, 3450, 3500, 3560, 3600, 3700, 3800, 4000, 4100, 4200 };
-PiController BmsAlgo::cvControllers[3];
+PiControllerFloat BmsAlgo::cvControllers[3];
+PiControllerFloat BmsAlgo::cellMinController;
 bool BmsAlgo::full;
 
 /** \brief Calculates SoC from a starting point adding the charge through the battery
@@ -114,9 +115,9 @@ float BmsAlgo::GetChargeCurrent(float maxCellVoltage, float hystVoltage, float i
     *
     */
 
-   float cv1Result = cvControllers[0].Run(FP_FROMFLT(maxCellVoltage / 10));
-   float cv2Result = cvControllers[1].Run(FP_FROMFLT(maxCellVoltage / 10));
-   float cv3Result = cvControllers[2].Run(FP_FROMFLT(maxCellVoltage / 10));
+   float cv1Result = cvControllers[0].Run(maxCellVoltage);
+   float cv2Result = cvControllers[1].Run(maxCellVoltage);
+   float cv3Result = cvControllers[2].Run(maxCellVoltage);
 
    result = MAX(cv1Result, MAX(cv2Result, cv3Result));
 
@@ -130,26 +131,15 @@ float BmsAlgo::GetChargeCurrent(float maxCellVoltage, float hystVoltage, float i
 }
 
 /**
- * @brief Calculates a limiting factor based on the minimum cell voltage and a specified limit.
+ * @brief Limits the minimum cell voltage by limiting current
  *
- * This function determines a limiting factor that scales linearly based on the difference
- * between the provided minimum voltage and a specified limit. The limiting factor is
- * designed to start limiting when the minimum voltage is 50 mV above the specified limit.
- * The resulting factor is constrained to a range between 0 and 1.
+ * @param minVoltage The minimum voltage reading from the battery cell, in mV
  *
- * @param minVoltage The minimum voltage of the cell, expressed as a float.
- * @param limit The voltage limit to compare against, expressed as a float.
- *
- * @return A float representing the limiting factor, which will be in the range [0, 1].
- *         A factor of 0 indicates no limitation, while a factor of 1 indicates full
- *         limitation based on the minimum voltage.
+ * @return Current limit to avoid minimum cell voltage
  */
-float BmsAlgo::LimitMinimumCellVoltage(float minVoltage, float limit)
+float BmsAlgo::LimitMinimumCellVoltage(float minVoltage)
 {
-   float factor = (minVoltage - limit) / 50; //start limiting 50mV before hitting minimum
-   factor = MAX(0, factor);
-   factor = MIN(1, factor);
-   return factor;
+   return -cellMinController.Run(minVoltage);
 }
 
 /**
@@ -248,11 +238,46 @@ void BmsAlgo::SetCCCVCurve(uint8_t idx, float current, uint16_t voltage)
 {
    if (idx > 2) return;
 
-   cvControllers[idx].SetGains(1, 1);
-   cvControllers[idx].SetCallingFrequency(10);
-   cvControllers[idx].SetRef(FP_FROMINT(voltage) / 10);
+   cvControllers[idx].SetRef(voltage);
    cvControllers[idx].SetMinMaxY(0, current);
    cvControllers[idx].ResetIntegrator();
+}
+
+/** \brief Set the minimum cell voltage limit
+ *
+ * \param voltage uint32_t lowest permitted cell voltage
+ * \param maxCurrent float maximum current above minimum cell voltage
+ * \return void
+ *
+ */
+void BmsAlgo::SetMinVoltage(uint32_t voltage, float maxCurrent)
+{
+   cellMinController.SetRef(voltage);
+   cellMinController.SetMinMaxY(-maxCurrent, 0);
+   cellMinController.ResetIntegrator();
+}
+
+/** \brief Set gains for all controllers
+ *
+ * \param kp float proportional gain
+ * \param ki float integral gain
+ * \return void
+ *
+ */
+void BmsAlgo::SetControllerGains(float kp, float ki)
+{
+   cvControllers[0].SetGains(kp, ki);
+   cvControllers[0].SetCallingFrequency(10);
+   cvControllers[0].ResetIntegrator();
+   cvControllers[1].SetGains(kp, ki);
+   cvControllers[1].SetCallingFrequency(10);
+   cvControllers[1].ResetIntegrator();
+   cvControllers[2].SetGains(kp, ki);
+   cvControllers[2].SetCallingFrequency(10);
+   cvControllers[2].ResetIntegrator();
+   cellMinController.SetGains(kp, ki);
+   cellMinController.SetCallingFrequency(10);
+   cellMinController.ResetIntegrator();
 }
 
 /**

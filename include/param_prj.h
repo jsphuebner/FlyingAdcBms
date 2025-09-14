@@ -39,14 +39,14 @@
  */
 
  //Define a version string of your firmware here
-#define VERSION 0.28
+#define VERSION 0.29
 
 /* Entries must be ordered as follows:
    1. Saveable parameters (id != 0)
    2. Temporary parameters (id = 0)
    3. Display values
  */
-//Next param id (increase when adding new parameter!): 58
+//Next param id (increase when adding new parameter!): 62
 //Next value Id: 2105
 /*              category     name         unit       min     max     default id */
 #define PARAM_LIST \
@@ -58,6 +58,7 @@
     PARAM_ENTRY(CAT_BMS,     balmode,     BALMODE,   0,      3,      0,      5   ) \
     PARAM_ENTRY(CAT_BMS,     ubalance,    "mV",      0,      4500,   4500,   30  ) \
     PARAM_ENTRY(CAT_BMS,     idlewait,    "s",       0,      100000, 60,     12  ) \
+    PARAM_ENTRY(CAT_BMS,     turnoffwait, "s",       0,      999999, 72000,  58  ) \
     PARAM_ENTRY(CAT_BMS,     idlethresh,  "A",       0,      10,     0.5,    55  ) \
     PARAM_ENTRY(CAT_BAT,     dischargemax,"A",       1,      2047,   200,    32  ) \
     PARAM_ENTRY(CAT_BAT,     nomcap,      "Ah",      0,      1000,   100,    9   ) \
@@ -70,6 +71,8 @@
     PARAM_ENTRY(CAT_BAT,     ucellmax,    "mV",      1000,   4500,   4200,   29  ) \
     PARAM_ENTRY(CAT_BAT,     ucellmin,    "mV",      1000,   4500,   3300,   28  ) \
     PARAM_ENTRY(CAT_BAT,     ucellhyst,   "mV",      1000,   4500,   4150,   56  ) \
+    PARAM_ENTRY(CAT_BAT,     ucellkp,     "",        0.03,   100,    1,      59  ) \
+    PARAM_ENTRY(CAT_BAT,     ucellki,     "",        0.03,   100,    1,      60  ) \
     PARAM_ENTRY(CAT_BAT,     ucell0soc,   "mV",      2000,   4500,   3300,   17  ) \
     PARAM_ENTRY(CAT_BAT,     ucell10soc,  "mV",      2000,   4500,   3400,   18  ) \
     PARAM_ENTRY(CAT_BAT,     ucell20soc,  "mV",      2000,   4500,   3450,   19  ) \
@@ -93,6 +96,7 @@
     TESTP_ENTRY(CAT_TEST,    enable,      OFFON,     0,      1,      1,      48  ) \
     TESTP_ENTRY(CAT_TEST,    testchan,    "",        -1,     15,     -1,     49  ) \
     TESTP_ENTRY(CAT_TEST,    testbalance, BALMODE,   0,      2,      0,      54  ) \
+    TESTP_ENTRY(CAT_TEST,    reboot,      OFFON,     0,      1,      0,      61  ) \
     VALUE_ENTRY(version,     VERSTR, 2001 ) \
     VALUE_ENTRY(hwrev,       HWREVS, 2104 ) \
     VALUE_ENTRY(opmode,      OPMODES,2000 ) \
@@ -196,7 +200,7 @@
 
 /***** Enum String definitions *****/
 #define HWREVS       "0=Unknown, 1=v1.x, 2=v2.0, 3=v2.1, 4=v2.2, 5=v2.3, 6=v2.4"
-#define OPMODES      "0=Boot, 1=GetAddr, 2=SetAddr, 3=ReqInfo, 4=RecvInfo, 5=Init, 6=SelfTest, 7=Run, 8=Idle, 9=Error"
+#define OPMODES      "0=Boot, 1=GetAddr, 2=SetAddr, 3=ReqInfo, 4=RecvInfo, 5=Init, 6=SelfTest, 7=Run, 8=Idle, 9=Error, 10=Reboot"
 #define OFFON        "0=Off, 1=On"
 #define BALMODE      "0=Off, 1=Additive, 2=Dissipative, 3=Both"
 #define BAL          "0=None, 1=Discharge, 2=ChargePos, 3=ChargeNeg"

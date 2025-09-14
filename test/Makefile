@@ -6,9 +6,7 @@ CFLAGS    = -std=c99 -ggdb -DSTM32F1 -I../include -I../libopeninv/include -I../l
 CPPFLAGS    = -ggdb -I../include -I../libopeninv/include -I../libopencm3/include
 LDFLAGS     = -g
 BINARY		= test_bms
-OBJS		= test_main.o bmsalgo.o test_bmsalgo.o \
-			  stub_canhardware.o \
-			  stub_libopencm3.o picontroller.o
+OBJS		= test_main.o bmsalgo.o test_bmsalgo.o picontroller.o
 VPATH = ../src ../libopeninv/src
 
 # Check if the variable GITHUB_RUN_NUMBER exists. When running on the github actions running, this

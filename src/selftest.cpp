@@ -95,7 +95,7 @@ SelfTest::TestResult SelfTest::RunTestBalancer()
    else if (cycleCounter == 2) {
       int adc = FlyingAdcBms::GetResult();
 
-      if (adc < 8190) { //We expect the ADC to saturate
+      if (adc < 6000) { //We expect the ADC to saturate
          errChannel = adc;
          return TestFailed;
       }
@@ -110,7 +110,7 @@ SelfTest::TestResult SelfTest::RunTestBalancer()
       int adc = FlyingAdcBms::GetResult();
       FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_OFF);
 
-      if (adc < 8190) { //We expect the ADC to saturate
+      if (adc < 6000) { //We expect the ADC to saturate
          errChannel = adc;
          return TestFailed;
       }

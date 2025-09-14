@@ -61,8 +61,7 @@ static void CalculateCurrentLimits()
    chargeCurrentLimit *= BmsAlgo::HighTemperatureDerating(Param::GetFloat(Param::tempmax), 50);
    Param::SetFloat(Param::chargelim, chargeCurrentLimit);
 
-   float dischargeCurrentLimit = Param::GetFloat(Param::dischargemax);
-   dischargeCurrentLimit *= BmsAlgo::LimitMinimumCellVoltage(Param::GetFloat(Param::umin), Param::GetFloat(Param::ucellmin));
+   float dischargeCurrentLimit = BmsAlgo::LimitMinimumCellVoltage(Param::GetFloat(Param::umin));
    dischargeCurrentLimit *= BmsAlgo::HighTemperatureDerating(Param::GetFloat(Param::tempmax), 53);
    Param::SetFloat(Param::dischargelim, dischargeCurrentLimit);
 /*
@@ -111,7 +110,7 @@ static void CalculateSocSoh(BmsFsm::bmsstate stt, BmsFsm::bmsstate laststt)
 
    /* IDLE state means we haven't seen any current for some (configurable) time
       so cell voltage is approaching the true open circuit voltage */
-   if (stt == BmsFsm::IDLE && Param::GetFloat(Param::idc) < 0.8f)
+   if (stt == BmsFsm::IDLE && Param::GetFloat(Param::idc) < Param::GetFloat(Param::idlethresh))
    {
       estimatedSoc = BmsAlgo::EstimateSocFromVoltage(Param::GetFloat(Param::umin));
       Param::SetFloat(Param::soc, estimatedSoc);
@@ -120,7 +119,7 @@ static void CalculateSocSoh(BmsFsm::bmsstate stt, BmsFsm::bmsstate laststt)
 
       soh = BmsAlgo::CalculateSoH(estimatedSocAtValidSoh, estimatedSoc, asDiff - asDiffAfterEstimate);
 
-      if (estimatedSocAtValidSoh < 0)
+      if (soh > 0 && estimatedSocAtValidSoh < 0)
          estimatedSocAtValidSoh = estimatedSoc;
    }
    else
@@ -207,21 +206,37 @@ void Param::Change(Param::PARAM_NUM paramNum)
 {
    switch (paramNum)
    {
+   case Param::reboot:
+      Param::SetInt(Param::opmode, BmsFsm::REBOOT);
+      break;
    case Param::sohpreset:
       Param::SetFloat(Param::soh, Param::GetFloat(Param::sohpreset));
       break;
-   default:
-      BmsAlgo::SetNominalCapacity(Param::GetFloat(Param::nomcap) * Param::GetFloat(Param::soh) / 100.0f);
-      SelfTest::SetNumChannels(Param::GetInt(Param::numchan));
-
-      for (int i = 0; i < 11; i++)
-      {
-         BmsAlgo::SetSocLookupPoint(i * 10, Param::GetInt((Param::PARAM_NUM)(Param::ucell0soc + i)));
-      }
-
+   case Param::icc1:
+   case Param::ucv1:
       BmsAlgo::SetCCCVCurve(0, Param::GetFloat(Param::icc1), Param::GetInt(Param::ucv1));
+      break;
+   case Param::icc2:
+   case Param::ucv2:
       BmsAlgo::SetCCCVCurve(1, Param::GetFloat(Param::icc2), Param::GetInt(Param::ucv2));
+      break;
+   case Param::icc3:
+   case Param::ucellmax:
       BmsAlgo::SetCCCVCurve(2, Param::GetFloat(Param::icc3), Param::GetInt(Param::ucellmax));
+      break;
+   case Param::nomcap:
+      BmsAlgo::SetNominalCapacity(Param::GetFloat(Param::nomcap));
+      break;
+   case Param::ucellkp:
+   case Param::ucellki:
+      BmsAlgo::SetControllerGains(Param::GetFloat(Param::ucellkp), Param::GetFloat(Param::ucellki));
+      break;
+   case Param::ucellmin:
+      BmsAlgo::SetMinVoltage(Param::GetInt(Param::ucellmin), Param::GetFloat(Param::dischargemax));
+      break;
+   default:
+      for (int i = 0; i < 11; i++)
+         BmsAlgo::SetSocLookupPoint(i * 10, Param::GetInt((Param::PARAM_NUM)(Param::ucell0soc + i)));
       break;
    }
 }
@@ -237,6 +252,21 @@ static void LoadNVRAM()
       Param::SetFloat(Param::soh, (float)BKP_DR2 / 100.0f);
    else
       Param::SetFixed(Param::soh, Param::Get(Param::sohpreset));
+}
+
+static void InitParameters()
+{
+   BmsAlgo::SetCCCVCurve(0, Param::GetFloat(Param::icc1), Param::GetInt(Param::ucv1));
+   BmsAlgo::SetCCCVCurve(1, Param::GetFloat(Param::icc2), Param::GetInt(Param::ucv2));
+   BmsAlgo::SetCCCVCurve(2, Param::GetFloat(Param::icc3), Param::GetInt(Param::ucellmax));
+   BmsAlgo::SetMinVoltage(Param::GetInt(Param::ucellmin), Param::GetFloat(Param::dischargemax));
+   BmsAlgo::SetNominalCapacity(Param::GetFloat(Param::nomcap));
+   BmsAlgo::SetControllerGains(Param::GetFloat(Param::ucellkp), Param::GetFloat(Param::ucellki));
+   SelfTest::SetNumChannels(Param::GetInt(Param::numchan));
+   for (int i = 0; i < 11; i++)
+      BmsAlgo::SetSocLookupPoint(i * 10, Param::GetInt((Param::PARAM_NUM)(Param::ucell0soc + i)));
+   Param::SetInt(Param::hwrev, hwRev);
+   Param::SetInt(Param::version, 4);
 }
 
 //Whichever timer(s) you use for the scheduler, you have to
@@ -277,7 +307,6 @@ extern "C" int main(void)
    CanSdo sdo(&c, &cme);
 
    BmsFsm fsm(&cmi, &sdo);
-   //c.AddCallback(&fsm);
    bmsFsm = &fsm;
    BmsIO::SetBmsFsm(&fsm);
 
@@ -286,12 +315,10 @@ extern "C" int main(void)
 
    s.AddTask(BmsIO::MeasureCurrent, 5);
    s.AddTask(ReadCellVoltages, 25);
-   s.AddTask(BmsIO::SwitchMux, 2); //This must added after ReadCellVoltages() to avoid an additional 2 ms delay
+   s.AddTask(BmsIO::SwitchMux, 2); //This must be added after ReadCellVoltages() to avoid an additional 2 ms delay
    s.AddTask(Ms100Task, 100);
 
-   Param::SetInt(Param::hwrev, hwRev);
-   Param::SetInt(Param::version, 4);
-   Param::Change(Param::PARAM_LAST); //Call callback once for general parameter propagation
+   InitParameters();
 
    LoadNVRAM();
 
