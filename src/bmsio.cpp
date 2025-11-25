@@ -67,6 +67,7 @@ void BmsIO::ReadCellVoltages()
 
    if (balance)
    {
+      float balanceMax = Param::GetFloat(Param::ucell100soc);
       if (balanceCycles == 0)
       {
          balanceCycles = totalBalanceCycles; //this leads to switching to next channel below
@@ -95,6 +96,8 @@ void BmsIO::ReadCellVoltages()
          default: //not balancing
             break;
          }
+
+         balanceTarget = MIN(balanceTarget, balanceMax);
 
          if (udc < (balanceTarget - 3) && (balMode & BAL_ADD))
          {

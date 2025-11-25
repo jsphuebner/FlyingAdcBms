@@ -139,8 +139,9 @@ HwRev detect_hw()
    uint16_t revisionInput = gpio_get(GPIOB, GPIO9 | GPIO10 | GPIO11);
    const uint16_t rev23 = GPIO10 | GPIO11;
    const uint16_t rev24 = GPIO9 | GPIO11;
+   const uint16_t revUnknown = GPIO9 | GPIO10 | GPIO11;
 
-   if (revisionInput == (GPIO9 | GPIO10 | GPIO11))
+   if (revisionInput == revUnknown)
    {
       //We are on hardware before 2.3, none of the pins are pulled to GND
       //check if mux pins are pulled down

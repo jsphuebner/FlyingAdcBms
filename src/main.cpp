@@ -50,6 +50,7 @@ static Stm32Scheduler* scheduler;
 static CanMap* canMapExternal;
 static CanMap* canMapInternal;
 static BmsFsm* bmsFsm;
+static CanSdo* canSdo;
 HwRev hwRev;
 
 static void CalculateCurrentLimits()
@@ -94,7 +95,7 @@ static void CalculateSocSoh(BmsFsm::bmsstate stt, BmsFsm::bmsstate laststt)
       /* If the SoC difference was large enough we have a valid SoH */
       if (soh > 0)
       {
-         float lastSoh = (float)BKP_DR2 / 100.0f;
+         float lastSoh = Param::GetFloat(Param::soh);
          //Don't just overwrite the existing SoH but average it to the existing SoH with a slow IIR filter
          soh = IIRFILTERF(lastSoh, soh, 10);
          //Store in NVRAM
@@ -167,6 +168,7 @@ static void Ms100Task(void)
    Param::SetInt(Param::counter, (Param::GetInt(Param::counter) + 1) & 0xF);
    Param::SetInt(Param::uptime, rtc_get_counter_val());
 
+   canSdo->TriggerTimeout(100);
    canMapExternal->SendAll();
    canMapInternal->SendAll();
 }
@@ -305,6 +307,7 @@ extern "C" int main(void)
    canMapInternal = &cmi;
    canMapExternal = &cme;
    CanSdo sdo(&c, &cme);
+   canSdo = &sdo;
 
    BmsFsm fsm(&cmi, &sdo);
    bmsFsm = &fsm;

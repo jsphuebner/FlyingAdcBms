@@ -346,10 +346,6 @@
 		<Unit filename="test/stub_canhardware.h">
 			<Option target="Test" />
 		</Unit>
-		<Unit filename="test/stub_libopencm3.c">
-			<Option compilerVar="CC" />
-			<Option target="Test" />
-		</Unit>
 		<Unit filename="test/test.h">
 			<Option target="Test" />
 		</Unit>
