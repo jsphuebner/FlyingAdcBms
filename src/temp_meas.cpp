@@ -21,18 +21,19 @@
 #include "temp_meas.h"
 #include <stdint.h>
 #include <math.h>
-
+#include "hwdefs.h"
 
 float TempMeas::AdcToTemperature(int digit, int nomRes, int beta)
 {
     /* Convert the resistance to a temperature */
     /* Based on: https://learn.adafruit.com/thermistor/using-a-thermistor */
    const int seriesResistor = 1200;
+   const int seriesResistor2 = hwRev == HW_24 ? 1200 : 0; //From 2.4 on we have another 1k2 series resistor from 5V
    const int nominalTemp = 25;
    const float maxAdcValue = 4095.0f;
    const float absoluteZero = 273.15f;
    const float voltageRatio = 5.0f / 3.3f; //Ratio of pull-up voltage and ADC reference voltage
-   float resistance = seriesResistor * (voltageRatio / (digit / maxAdcValue) - 1.0f);
+   float resistance = seriesResistor * (voltageRatio / (digit / maxAdcValue) - 1.0f) - seriesResistor2;
    float steinhart = logf(resistance / nomRes) / beta;     // log(R/Ro)/B
    steinhart += 1.0f / (nominalTemp + absoluteZero); // + (1/To)
    steinhart = 1.0f / steinhart;
