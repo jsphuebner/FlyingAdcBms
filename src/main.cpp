@@ -234,6 +234,7 @@ void Param::Change(Param::PARAM_NUM paramNum)
       BmsAlgo::SetControllerGains(Param::GetFloat(Param::ucellkp), Param::GetFloat(Param::ucellki));
       break;
    case Param::ucellmin:
+   case Param::dischargemax:
       BmsAlgo::SetMinVoltage(Param::GetInt(Param::ucellmin), Param::GetFloat(Param::dischargemax));
       break;
    default:
