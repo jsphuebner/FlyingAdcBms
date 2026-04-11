@@ -124,7 +124,7 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
    case REQ_INFO:
       cycles++;
 
-      if (cycles == 10)
+      if (cycles == 15)
       {
          canSdo->SDORead(infoIndex + Param::GetInt(Param::sdobase), SDO_INDEX_PARAMS, (uint8_t)Param::numchan);
 
@@ -213,6 +213,8 @@ BmsFsm::bmsstate BmsFsm::Run(bmsstate currentState)
 
       if (cycles == 10)
       {
+         infoIndex = 1;
+         numModules = 1;
          return BOOT;
       }
       break;

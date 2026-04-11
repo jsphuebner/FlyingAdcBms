@@ -62,7 +62,7 @@ void BmsIO::ReadCellVoltages()
    static uint8_t chan = 0, balanceCycles = 0;
    static float sum = 0, min = 8000, max = 0;
    int balMode = Param::GetInt(Param::balmode);
-   bool balance = Param::GetInt(Param::opmode) == BmsFsm::IDLE && Param::GetFloat(Param::uavg) > Param::GetFloat(Param::ubalance) && BAL_OFF != balMode;
+   bool balance = Param::GetInt(Param::opmode) == BmsFsm::IDLE && BAL_OFF != balMode;
    FlyingAdcBms::BalanceStatus bstt;
 
    if (balance)
@@ -99,11 +99,11 @@ void BmsIO::ReadCellVoltages()
 
          balanceTarget = MIN(balanceTarget, balanceMax);
 
-         if (udc < (balanceTarget - 3) && (balMode & BAL_ADD))
+         if (udc < (balanceTarget - 3) && (balMode & BAL_ADD) && (udc >= Param::GetFloat(Param::ubalance)))
          {
             bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_CHARGE);
          }
-         else if (udc > (balanceTarget + 1) && (balMode & BAL_DIS))
+         else if (udc > (balanceTarget + 1) && (balMode & BAL_DIS) && (udc >= Param::GetFloat(Param::ubalance)))
          {
             bstt = FlyingAdcBms::SetBalancing(FlyingAdcBms::BAL_DISCHARGE);
          }
@@ -156,7 +156,7 @@ void BmsIO::ReadCellVoltages()
       else if (even && (chan + 1) < numChan)
          chan++;
       //or lower odd channel
-      else if (even)
+      else if (even && numChan > 1)
          chan--;
       //Now we sweep across all odd channels until we reach 1
       else if (chan > 1)
