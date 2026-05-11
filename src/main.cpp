@@ -111,7 +111,7 @@ static void CalculateSocSoh(BmsFsm::bmsstate stt, BmsFsm::bmsstate laststt)
 
    /* IDLE state means we haven't seen any current for some (configurable) time
       so cell voltage is approaching the true open circuit voltage */
-   if (stt == BmsFsm::IDLE && Param::GetFloat(Param::idc) < Param::GetFloat(Param::idlethresh))
+   if (stt == BmsFsm::IDLE && ABS(Param::GetFloat(Param::idc)) < Param::GetFloat(Param::idlethresh))
    {
       estimatedSoc = BmsAlgo::EstimateSocFromVoltage(Param::GetFloat(Param::umin));
       Param::SetFloat(Param::soc, estimatedSoc);
